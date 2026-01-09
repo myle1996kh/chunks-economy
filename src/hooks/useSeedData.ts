@@ -1,7 +1,15 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { EREL_COURSE, EREL_LESSONS } from '@/data/erelCourse';
+import { EREL_LESSONS_DATA } from '@/data/lessons';
 import { toast } from 'sonner';
+import type { Json } from '@/integrations/supabase/types';
+
+export const EREL_COURSE = {
+  code: "EREL",
+  name: "EREL Listening",
+  description: "Master everyday English through real-world conversations, street food adventures, and practical business scenarios. 15 comprehensive lessons with vocabulary, phrases, and sentences.",
+  is_active: true
+};
 
 export const useSeedERELCourse = () => {
   const queryClient = useQueryClient();
@@ -33,12 +41,12 @@ export const useSeedERELCourse = () => {
 
       if (courseError) throw courseError;
 
-      // Create all lessons
-      const lessonsToInsert = EREL_LESSONS.map(lesson => ({
+      // Create all lessons from the imported JSON data
+      const lessonsToInsert = EREL_LESSONS_DATA.map((lesson, index) => ({
         course_id: course.id,
         lesson_name: lesson.lesson_name,
-        order_index: lesson.order_index,
-        categories: lesson.categories
+        order_index: index + 1,
+        categories: lesson.categories as unknown as Json
       }));
 
       const { error: lessonsError } = await supabase
@@ -52,7 +60,7 @@ export const useSeedERELCourse = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['courses'] });
       queryClient.invalidateQueries({ queryKey: ['all-lessons'] });
-      toast.success(`EREL course created with ${data.lessonsCount} lessons!`);
+      toast.success(`EREL Listening course created with ${data.lessonsCount} lessons!`);
     },
     onError: (error) => {
       toast.error(`Failed to seed EREL: ${error.message}`);
