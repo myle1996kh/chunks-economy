@@ -8,7 +8,9 @@ import {
   TrendingUp, 
   Clock,
   Mic,
-  Loader2
+  Loader2,
+  Trophy,
+  History
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { StatsCard } from "@/components/dashboard/StatsCard";
@@ -21,6 +23,9 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/hooks/useUserData";
 import { useCourses, useEnrollments, useCourseLessons, useEnrollInCourse, Lesson } from "@/hooks/useCourses";
+import { useUserStats, useUserProgress } from "@/hooks/usePractice";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { formatDistanceToNow } from "date-fns";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -28,13 +33,18 @@ const Index = () => {
   const { data: profile } = useProfile();
   const { data: courses, isLoading: coursesLoading } = useCourses();
   const { data: enrollments, isLoading: enrollmentsLoading } = useEnrollments();
+  const { data: userStats } = useUserStats();
   const enrollInCourse = useEnrollInCourse();
+  const tts = useTextToSpeech();
   
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [activeCategory, setActiveCategory] = useState("Vocab");
   const [isPracticeOpen, setIsPracticeOpen] = useState(false);
+
+  // Get user progress for selected lesson
+  const { data: lessonProgress } = useUserProgress(selectedLesson?.id);
 
   // Get enrolled course IDs
   const enrolledCourseIds = enrollments?.map(e => e.course_id) || [];
@@ -56,8 +66,19 @@ const Index = () => {
       }))
     : [];
 
-  // Get practice items for active category
+  // Get practice items for active category with mastery status
   const practiceItems = selectedLesson?.categories?.[activeCategory] || [];
+  const practiceItemsWithMastery = practiceItems.map((item: any, index: number) => {
+    const progress = lessonProgress?.find(
+      p => p.category === activeCategory && p.item_index === index
+    );
+    return {
+      ...item,
+      mastered: (progress?.mastery_level || 0) >= 3,
+      bestScore: progress?.best_score || 0,
+      attempts: progress?.attempts || 0
+    };
+  });
 
   const isLoading = coursesLoading || enrollmentsLoading;
 
@@ -96,7 +117,7 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatsCard
               title="Current Streak"
-              value="0 days"
+              value={`${userStats?.streak || 0} days`}
               icon={Flame}
               variant="primary"
             />
@@ -109,13 +130,14 @@ const Index = () => {
             />
             <StatsCard
               title="Average Score"
-              value="--"
+              value={userStats?.avgScore ? `${userStats.avgScore}%` : "--"}
+              subtitle={userStats?.totalPractice ? `${userStats.totalPractice} practices` : undefined}
               icon={Target}
               variant="success"
             />
             <StatsCard
               title="Practice Time"
-              value="0h"
+              value={`${userStats?.practiceHours || 0}h`}
               subtitle="this week"
               icon={Clock}
               variant="accent"
@@ -245,14 +267,14 @@ const Index = () => {
                       }}
                     />
                     <div className="mt-4 space-y-2 max-h-[300px] overflow-y-auto">
-                      {practiceItems.slice(0, 5).map((item: any, i: number) => (
+                      {practiceItemsWithMastery.slice(0, 5).map((item: any, i: number) => (
                         <PracticeItemCard
                           key={i}
                           english={item.English}
                           vietnamese={item.Vietnamese}
-                          mastered={false}
+                          mastered={item.mastered}
                           onClick={() => setIsPracticeOpen(true)}
-                          onListen={() => console.log("Listen to", item.English)}
+                          onListen={() => tts.speak(item.English)}
                         />
                       ))}
                     </div>
@@ -276,14 +298,44 @@ const Index = () => {
 
               {/* Recent Activity */}
               <div className="p-6 rounded-2xl bg-card border border-border/50">
-                <h3 className="font-display font-semibold text-lg mb-4">
-                  Recent Activity
-                </h3>
-                <div className="text-center py-4">
-                  <p className="text-sm text-muted-foreground">
-                    No activity yet. Start practicing to see your progress!
-                  </p>
+                <div className="flex items-center gap-2 mb-4">
+                  <History className="w-5 h-5 text-muted-foreground" />
+                  <h3 className="font-display font-semibold text-lg">
+                    Recent Activity
+                  </h3>
                 </div>
+                {userStats?.recentHistory && userStats.recentHistory.length > 0 ? (
+                  <div className="space-y-3">
+                    {userStats.recentHistory.slice(0, 5).map((history: any, i: number) => (
+                      <div 
+                        key={i} 
+                        className="flex items-center justify-between py-2 border-b border-border/30 last:border-0"
+                      >
+                        <div>
+                          <div className={`text-sm font-medium ${
+                            history.score >= 70 ? "text-success" : "text-muted-foreground"
+                          }`}>
+                            Score: {history.score}%
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(history.practiced_at), { addSuffix: true })}
+                          </div>
+                        </div>
+                        <div className={`text-sm font-medium ${
+                          history.coins_earned >= 0 ? "text-success" : "text-destructive"
+                        }`}>
+                          {history.coins_earned >= 0 ? "+" : ""}{history.coins_earned} C
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground">
+                      No activity yet. Start practicing to see your progress!
+                    </p>
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>
@@ -295,12 +347,13 @@ const Index = () => {
         <PracticeModal
           isOpen={isPracticeOpen}
           onClose={() => setIsPracticeOpen(false)}
+          lessonId={selectedLesson.id}
           lessonName={selectedLesson.lesson_name}
           category={activeCategory}
-          items={practiceItems.map((item: any) => ({
+          items={practiceItemsWithMastery.map((item: any) => ({
             english: item.English,
             vietnamese: item.Vietnamese,
-            mastered: false
+            mastered: item.mastered
           }))}
         />
       )}
