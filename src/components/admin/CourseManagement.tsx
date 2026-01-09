@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useCourses, useCreateCourse, useDeleteCourse } from '@/hooks/useCourses';
+import { useSeedERELCourse } from '@/hooks/useSeedData';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +12,8 @@ import {
   Loader2, 
   GraduationCap,
   Calendar,
-  Users
+  Users,
+  Download
 } from 'lucide-react';
 import {
   Dialog,
@@ -38,6 +40,7 @@ const CourseManagement: React.FC = () => {
   const { data: courses, isLoading } = useCourses();
   const createCourse = useCreateCourse();
   const deleteCourse = useDeleteCourse();
+  const seedEREL = useSeedERELCourse();
   
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newCourse, setNewCourse] = useState({
@@ -76,13 +79,28 @@ const CourseManagement: React.FC = () => {
           <p className="text-muted-foreground">Manage course catalog</p>
         </div>
         
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              New Course
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={() => seedEREL.mutate()}
+            disabled={seedEREL.isPending || courses?.some(c => c.code === 'EREL')}
+          >
+            {seedEREL.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            Import EREL
+          </Button>
+          
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                New Course
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Course</DialogTitle>
@@ -143,6 +161,7 @@ const CourseManagement: React.FC = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {courses?.length === 0 ? (

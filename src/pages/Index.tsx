@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { 
   BookOpen, 
   Target, 
@@ -7,7 +8,7 @@ import {
   TrendingUp, 
   Clock,
   Mic,
-  Play
+  Loader2
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { StatsCard } from "@/components/dashboard/StatsCard";
@@ -17,105 +18,62 @@ import { CategoryTabs } from "@/components/dashboard/CategoryTabs";
 import { PracticeItemCard } from "@/components/dashboard/PracticeItemCard";
 import { PracticeModal } from "@/components/practice/PracticeModal";
 import { Button } from "@/components/ui/button";
-
-// Mock data
-const mockCourses = [
-  {
-    code: "EREL",
-    name: "English Real-Life Elementary",
-    description: "Master everyday English through real-world conversations and practical scenarios.",
-    lessonsCount: 15,
-    studentsCount: 45,
-    progress: 33,
-    enrolled: true,
-  },
-  {
-    code: "ERES",
-    name: "English Real-Life Starter",
-    description: "Perfect for beginners. Build your foundation with essential vocabulary and phrases.",
-    lessonsCount: 15,
-    studentsCount: 30,
-    enrolled: false,
-  },
-];
-
-const mockLessons = [
-  {
-    index: 1,
-    name: "Food Tour - Street Food Adventures",
-    categories: [
-      { name: "Vocab", count: 20 },
-      { name: "Slang", count: 5 },
-      { name: "Phrase", count: 20 },
-      { name: "Sentence", count: 9 },
-      { name: "Review", count: 20 },
-    ],
-    deadline: "Jan 20",
-    status: "completed" as const,
-    score: 85,
-  },
-  {
-    index: 2,
-    name: "Coffee Culture - Morning Routines",
-    categories: [
-      { name: "Vocab", count: 18 },
-      { name: "Slang", count: 4 },
-      { name: "Phrase", count: 22 },
-    ],
-    deadline: "Jan 25",
-    status: "in-progress" as const,
-  },
-  {
-    index: 3,
-    name: "Shopping - Market Bargaining",
-    categories: [
-      { name: "Vocab", count: 25 },
-      { name: "Phrase", count: 15 },
-    ],
-    deadline: "Jan 30",
-    status: "available" as const,
-  },
-  {
-    index: 4,
-    name: "Transportation - Getting Around",
-    categories: [
-      { name: "Vocab", count: 20 },
-      { name: "Phrase", count: 18 },
-    ],
-    deadline: "Feb 5",
-    status: "locked" as const,
-  },
-];
-
-const mockCategories = [
-  { id: "vocab", name: "Vocab", count: 20 },
-  { id: "slang", name: "Slang", count: 5 },
-  { id: "phrase", name: "Phrase", count: 20 },
-  { id: "sentence", name: "Sentence", count: 9 },
-  { id: "review", name: "Review", count: 20 },
-];
-
-const mockPracticeItems = [
-  { english: "Tentacle", vietnamese: "Râu mực", mastered: true, score: 92 },
-  { english: "I'm getting kinda full now", vietnamese: "Tôi hơi no rồi", mastered: true, score: 88 },
-  { english: "Blame yourself for being late", vietnamese: "Ai biểu đến trễ", mastered: false, score: 65 },
-  { english: "This is absolutely delicious!", vietnamese: "Món này ngon tuyệt vời!", mastered: false },
-  { english: "Can I have the bill please?", vietnamese: "Cho tôi xin hóa đơn", mastered: false },
-];
+import { useAuth } from "@/context/AuthContext";
+import { useProfile } from "@/hooks/useUserData";
+import { useCourses, useEnrollments, useCourseLessons, useEnrollInCourse, Lesson } from "@/hooks/useCourses";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: profile } = useProfile();
+  const { data: courses, isLoading: coursesLoading } = useCourses();
+  const { data: enrollments, isLoading: enrollmentsLoading } = useEnrollments();
+  const enrollInCourse = useEnrollInCourse();
+  
   const [currentPage, setCurrentPage] = useState("dashboard");
-  const [selectedLesson, setSelectedLesson] = useState<typeof mockLessons[0] | null>(null);
-  const [activeCategory, setActiveCategory] = useState("vocab");
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [activeCategory, setActiveCategory] = useState("Vocab");
   const [isPracticeOpen, setIsPracticeOpen] = useState(false);
-  const coins = 1250;
+
+  // Get enrolled course IDs
+  const enrolledCourseIds = enrollments?.map(e => e.course_id) || [];
+  
+  // Find first enrolled course for lessons display
+  const firstEnrolledCourse = courses?.find(c => enrolledCourseIds.includes(c.id));
+  
+  // Fetch lessons for the selected/first enrolled course
+  const { data: lessons, isLoading: lessonsLoading } = useCourseLessons(
+    selectedCourseId || firstEnrolledCourse?.id || null
+  );
+
+  // Get categories from selected lesson
+  const lessonCategories = selectedLesson?.categories 
+    ? Object.entries(selectedLesson.categories).map(([name, items]) => ({
+        id: name.toLowerCase(),
+        name,
+        count: (items as any[]).length
+      }))
+    : [];
+
+  // Get practice items for active category
+  const practiceItems = selectedLesson?.categories?.[activeCategory] || [];
+
+  const isLoading = coursesLoading || enrollmentsLoading;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <Sidebar 
         currentPage={currentPage} 
         onNavigate={setCurrentPage} 
-        coins={coins}
       />
       
       <main className="ml-64 p-8">
@@ -127,7 +85,7 @@ const Index = () => {
             className="mb-8"
           >
             <h1 className="text-3xl font-display font-bold text-foreground mb-2">
-              Welcome back! 👋
+              Welcome back, {profile?.display_name || 'Learner'}! 👋
             </h1>
             <p className="text-muted-foreground">
               Continue your English learning journey. You're doing great!
@@ -138,28 +96,26 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatsCard
               title="Current Streak"
-              value="7 days"
+              value="0 days"
               icon={Flame}
               variant="primary"
-              trend={{ value: 14, label: "this week" }}
             />
             <StatsCard
-              title="Lessons Completed"
-              value="23"
-              subtitle="out of 45"
+              title="Enrolled Courses"
+              value={enrolledCourseIds.length.toString()}
+              subtitle={`out of ${courses?.length || 0}`}
               icon={BookOpen}
               variant="default"
             />
             <StatsCard
               title="Average Score"
-              value="82%"
+              value="--"
               icon={Target}
               variant="success"
-              trend={{ value: 5, label: "improvement" }}
             />
             <StatsCard
               title="Practice Time"
-              value="4.5h"
+              value="0h"
               subtitle="this week"
               icon={Clock}
               variant="accent"
@@ -170,7 +126,7 @@ const Index = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Courses & Lessons */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Continue Learning */}
+              {/* Available Courses */}
               <motion.section
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -178,48 +134,89 @@ const Index = () => {
               >
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-display font-semibold text-foreground">
-                    Continue Learning
+                    {enrolledCourseIds.length > 0 ? 'Your Courses' : 'Available Courses'}
                   </h2>
-                  <Button variant="ghost" size="sm" className="text-primary">
-                    View All Courses
-                  </Button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {mockCourses.map((course) => (
-                    <CourseCard
-                      key={course.code}
-                      {...course}
-                      onEnroll={() => console.log("Enroll in", course.code)}
-                      onContinue={() => setSelectedLesson(mockLessons[1])}
-                    />
-                  ))}
-                </div>
+                
+                {courses?.length === 0 ? (
+                  <div className="p-8 rounded-2xl border border-dashed border-border/50 text-center">
+                    <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">
+                      No courses available yet. Check back soon!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {courses?.map((course) => {
+                      const isEnrolled = enrolledCourseIds.includes(course.id);
+                      return (
+                        <CourseCard
+                          key={course.id}
+                          code={course.code}
+                          name={course.name}
+                          description={course.description || ''}
+                          lessonsCount={15}
+                          studentsCount={0}
+                          enrolled={isEnrolled}
+                          onEnroll={() => enrollInCourse.mutate(course.id)}
+                          onContinue={() => setSelectedCourseId(course.id)}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
               </motion.section>
 
               {/* Lessons */}
-              <motion.section
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-display font-semibold text-foreground">
-                    EREL Lessons
-                  </h2>
-                  <span className="text-sm text-muted-foreground">
-                    5/15 completed
-                  </span>
-                </div>
-                <div className="space-y-3">
-                  {mockLessons.map((lesson) => (
-                    <LessonItem
-                      key={lesson.index}
-                      {...lesson}
-                      onClick={() => setSelectedLesson(lesson)}
-                    />
-                  ))}
-                </div>
-              </motion.section>
+              {(selectedCourseId || firstEnrolledCourse) && (
+                <motion.section
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-display font-semibold text-foreground">
+                      {courses?.find(c => c.id === (selectedCourseId || firstEnrolledCourse?.id))?.code} Lessons
+                    </h2>
+                    <span className="text-sm text-muted-foreground">
+                      {lessons?.length || 0} lessons
+                    </span>
+                  </div>
+                  
+                  {lessonsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                    </div>
+                  ) : lessons?.length === 0 ? (
+                    <div className="p-8 rounded-2xl border border-dashed border-border/50 text-center">
+                      <p className="text-muted-foreground">
+                        No lessons in this course yet.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {lessons?.map((lesson) => (
+                        <LessonItem
+                          key={lesson.id}
+                          index={lesson.order_index}
+                          name={lesson.lesson_name}
+                          categories={Object.entries(lesson.categories || {}).map(([name, items]) => ({
+                            name,
+                            count: (items as any[]).length
+                          }))}
+                          deadline={lesson.deadline_date ? new Date(lesson.deadline_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : undefined}
+                          status="available"
+                          onClick={() => {
+                            setSelectedLesson(lesson);
+                            const cats = Object.keys(lesson.categories || {});
+                            if (cats.length > 0) setActiveCategory(cats[0]);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </motion.section>
+              )}
             </div>
 
             {/* Practice Panel */}
@@ -232,30 +229,49 @@ const Index = () => {
               {/* Quick Practice */}
               <div className="p-6 rounded-2xl bg-card border border-border/50">
                 <h3 className="font-display font-semibold text-lg mb-4">
-                  Quick Practice
+                  {selectedLesson ? selectedLesson.lesson_name : 'Quick Practice'}
                 </h3>
-                <CategoryTabs
-                  categories={mockCategories}
-                  activeCategory={activeCategory}
-                  onSelect={setActiveCategory}
-                />
-                <div className="mt-4 space-y-2">
-                  {mockPracticeItems.slice(0, 4).map((item, i) => (
-                    <PracticeItemCard
-                      key={i}
-                      {...item}
-                      onClick={() => setIsPracticeOpen(true)}
-                      onListen={() => console.log("Listen to", item.english)}
+                
+                {selectedLesson ? (
+                  <>
+                    <CategoryTabs
+                      categories={lessonCategories}
+                      activeCategory={activeCategory.toLowerCase()}
+                      onSelect={(cat) => {
+                        const originalCat = Object.keys(selectedLesson.categories || {}).find(
+                          k => k.toLowerCase() === cat
+                        );
+                        if (originalCat) setActiveCategory(originalCat);
+                      }}
                     />
-                  ))}
-                </div>
-                <Button 
-                  className="w-full mt-4 gradient-primary text-primary-foreground"
-                  onClick={() => setIsPracticeOpen(true)}
-                >
-                  <Mic size={18} className="mr-2" />
-                  Start Practice Session
-                </Button>
+                    <div className="mt-4 space-y-2 max-h-[300px] overflow-y-auto">
+                      {practiceItems.slice(0, 5).map((item: any, i: number) => (
+                        <PracticeItemCard
+                          key={i}
+                          english={item.English}
+                          vietnamese={item.Vietnamese}
+                          mastered={false}
+                          onClick={() => setIsPracticeOpen(true)}
+                          onListen={() => console.log("Listen to", item.English)}
+                        />
+                      ))}
+                    </div>
+                    <Button 
+                      className="w-full mt-4 gradient-primary text-primary-foreground"
+                      onClick={() => setIsPracticeOpen(true)}
+                    >
+                      <Mic size={18} className="mr-2" />
+                      Start Practice Session
+                    </Button>
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <Mic className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">
+                      Select a lesson to start practicing
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Recent Activity */}
@@ -263,23 +279,10 @@ const Index = () => {
                 <h3 className="font-display font-semibold text-lg mb-4">
                   Recent Activity
                 </h3>
-                <div className="space-y-3">
-                  {[
-                    { action: "Completed D1 Vocab", coins: 15, time: "2h ago" },
-                    { action: "Mastered 'Tentacle'", coins: 5, time: "2h ago" },
-                    { action: "Started D2 Lesson", coins: 0, time: "1d ago" },
-                    { action: "Deadline bonus", coins: 10, time: "2d ago" },
-                  ].map((activity, i) => (
-                    <div key={i} className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">{activity.action}</span>
-                      <div className="flex items-center gap-2">
-                        {activity.coins > 0 && (
-                          <span className="text-success font-medium">+{activity.coins}</span>
-                        )}
-                        <span className="text-muted-foreground text-xs">{activity.time}</span>
-                      </div>
-                    </div>
-                  ))}
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground">
+                    No activity yet. Start practicing to see your progress!
+                  </p>
                 </div>
               </div>
             </motion.div>
@@ -288,13 +291,19 @@ const Index = () => {
       </main>
 
       {/* Practice Modal */}
-      <PracticeModal
-        isOpen={isPracticeOpen}
-        onClose={() => setIsPracticeOpen(false)}
-        lessonName="D1 - Food Tour"
-        category="Vocabulary"
-        items={mockPracticeItems}
-      />
+      {selectedLesson && (
+        <PracticeModal
+          isOpen={isPracticeOpen}
+          onClose={() => setIsPracticeOpen(false)}
+          lessonName={selectedLesson.lesson_name}
+          category={activeCategory}
+          items={practiceItems.map((item: any) => ({
+            english: item.English,
+            vietnamese: item.Vietnamese,
+            mastered: false
+          }))}
+        />
+      )}
     </div>
   );
 };

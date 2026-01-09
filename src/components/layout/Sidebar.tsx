@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
 import { 
   Home, 
   BookOpen, 
@@ -7,15 +8,19 @@ import {
   User, 
   ChevronRight,
   Mic,
-  TrendingUp
+  TrendingUp,
+  Shield,
+  LogOut
 } from "lucide-react";
 import { CoinBadge } from "@/components/ui/CoinBadge";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
+import { useWallet } from "@/hooks/useUserData";
+import { Button } from "@/components/ui/button";
 
 interface SidebarProps {
   currentPage: string;
   onNavigate: (page: string) => void;
-  coins: number;
 }
 
 const menuItems = [
@@ -31,7 +36,16 @@ const bottomItems = [
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
-export const Sidebar = ({ currentPage, onNavigate, coins }: SidebarProps) => {
+export const Sidebar = ({ currentPage, onNavigate }: SidebarProps) => {
+  const { isAdmin, isTeacher, signOut } = useAuth();
+  const { data: wallet } = useWallet();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
   return (
     <motion.aside
       initial={{ x: -100, opacity: 0 }}
@@ -54,7 +68,7 @@ export const Sidebar = ({ currentPage, onNavigate, coins }: SidebarProps) => {
       {/* Coin Balance */}
       <div className="p-4 mx-4 mt-4 rounded-xl glass-card">
         <p className="text-xs text-muted-foreground mb-2">Your Balance</p>
-        <CoinBadge amount={coins} size="lg" />
+        <CoinBadge amount={wallet?.balance || 0} size="lg" />
       </div>
 
       {/* Main Navigation */}
@@ -79,6 +93,20 @@ export const Sidebar = ({ currentPage, onNavigate, coins }: SidebarProps) => {
             )}
           </motion.button>
         ))}
+        
+        {/* Admin Link */}
+        {(isAdmin || isTeacher) && (
+          <Link to="/admin">
+            <motion.div
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+            >
+              <Shield size={20} />
+              <span className="font-medium">Admin Panel</span>
+            </motion.div>
+          </Link>
+        )}
       </nav>
 
       {/* Bottom Navigation */}
@@ -100,6 +128,15 @@ export const Sidebar = ({ currentPage, onNavigate, coins }: SidebarProps) => {
             <span className="font-medium">{item.label}</span>
           </motion.button>
         ))}
+        
+        <Button
+          variant="ghost"
+          onClick={handleSignOut}
+          className="w-full justify-start gap-3 px-4 py-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+        >
+          <LogOut size={20} />
+          <span className="font-medium">Sign Out</span>
+        </Button>
       </div>
     </motion.aside>
   );
