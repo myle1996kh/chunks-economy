@@ -1,19 +1,24 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useCourses, useCreateCourse, useDeleteCourse, useAllLessons } from '@/hooks/useCourses';
+import { useCourses, useCreateCourse, useUpdateCourse, useDeleteCourse, useAllLessons } from '@/hooks/useCourses';
 import { useSeedERELCourse } from '@/hooks/useSeedData';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { formatScheduleDays } from '@/lib/scheduleUtils';
 import { 
   Plus, 
   Trash2, 
   Loader2, 
   GraduationCap,
   Calendar,
-  Users,
-  Download
+  Edit,
+  Download,
+  Clock
 } from 'lucide-react';
 import {
   Dialog,
@@ -36,36 +41,96 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+const WEEKDAYS = [
+  { id: 'monday', label: 'Mon' },
+  { id: 'tuesday', label: 'Tue' },
+  { id: 'wednesday', label: 'Wed' },
+  { id: 'thursday', label: 'Thu' },
+  { id: 'friday', label: 'Fri' },
+  { id: 'saturday', label: 'Sat' },
+  { id: 'sunday', label: 'Sun' },
+];
+
+interface CourseFormData {
+  code: string;
+  name: string;
+  description: string;
+  start_date: string;
+  schedule_days: string[];
+  is_active: boolean;
+}
+
+const emptyForm: CourseFormData = {
+  code: '',
+  name: '',
+  description: '',
+  start_date: '',
+  schedule_days: ['monday', 'wednesday', 'friday'],
+  is_active: true
+};
+
 const CourseManagement: React.FC = () => {
   const { data: courses, isLoading } = useCourses();
   const { data: allLessons } = useAllLessons();
   const createCourse = useCreateCourse();
+  const updateCourse = useUpdateCourse();
   const deleteCourse = useDeleteCourse();
   const seedEREL = useSeedERELCourse();
   
-  // Check if EREL lessons already exist
   const erelCourse = courses?.find(c => c.code === 'EREL');
   const erelLessonsExist = erelCourse && allLessons?.some(l => l.course_id === erelCourse.id);
   
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [newCourse, setNewCourse] = useState({
-    code: '',
-    name: '',
-    description: '',
-    start_date: '',
-    is_active: true
-  });
+  const [editingCourse, setEditingCourse] = useState<string | null>(null);
+  const [formData, setFormData] = useState<CourseFormData>(emptyForm);
 
   const handleCreate = async () => {
     await createCourse.mutateAsync({
-      code: newCourse.code,
-      name: newCourse.name,
-      description: newCourse.description || null,
-      start_date: newCourse.start_date || null,
-      is_active: newCourse.is_active
+      code: formData.code,
+      name: formData.name,
+      description: formData.description || null,
+      start_date: formData.start_date || null,
+      schedule_days: formData.schedule_days,
+      is_active: formData.is_active
     });
     setIsCreateOpen(false);
-    setNewCourse({ code: '', name: '', description: '', start_date: '', is_active: true });
+    setFormData(emptyForm);
+  };
+
+  const handleUpdate = async () => {
+    if (!editingCourse) return;
+    await updateCourse.mutateAsync({
+      id: editingCourse,
+      code: formData.code,
+      name: formData.name,
+      description: formData.description || null,
+      start_date: formData.start_date || null,
+      schedule_days: formData.schedule_days,
+      is_active: formData.is_active
+    });
+    setEditingCourse(null);
+    setFormData(emptyForm);
+  };
+
+  const openEditDialog = (course: any) => {
+    setFormData({
+      code: course.code,
+      name: course.name,
+      description: course.description || '',
+      start_date: course.start_date || '',
+      schedule_days: course.schedule_days || ['monday', 'wednesday', 'friday'],
+      is_active: course.is_active
+    });
+    setEditingCourse(course.id);
+  };
+
+  const toggleScheduleDay = (day: string) => {
+    setFormData(prev => ({
+      ...prev,
+      schedule_days: prev.schedule_days.includes(day)
+        ? prev.schedule_days.filter(d => d !== day)
+        : [...prev.schedule_days, day]
+    }));
   };
 
   if (isLoading) {
@@ -76,12 +141,107 @@ const CourseManagement: React.FC = () => {
     );
   }
 
+  const CourseForm = ({ onSubmit, isLoading: formLoading, submitLabel }: { onSubmit: () => void; isLoading: boolean; submitLabel: string }) => (
+    <div className="space-y-4 py-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Course Code *</Label>
+          <Input
+            placeholder="e.g., EREL"
+            value={formData.code}
+            onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Start Date</Label>
+          <Input
+            type="date"
+            value={formData.start_date}
+            onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+          />
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        <Label>Course Name *</Label>
+        <Input
+          placeholder="e.g., English Real-Life Elementary"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label>Description</Label>
+        <Textarea
+          placeholder="Course description..."
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          rows={3}
+        />
+      </div>
+      
+      <div className="space-y-3">
+        <Label className="flex items-center gap-2">
+          <Clock className="w-4 h-4" />
+          Schedule Days
+        </Label>
+        <p className="text-xs text-muted-foreground">
+          Select days when lessons are scheduled. Used to calculate deadlines.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {WEEKDAYS.map(day => (
+            <Button
+              key={day.id}
+              type="button"
+              size="sm"
+              variant={formData.schedule_days.includes(day.id) ? "default" : "outline"}
+              onClick={() => toggleScheduleDay(day.id)}
+              className="w-12"
+            >
+              {day.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+      
+      <div className="flex items-center gap-3 pt-2">
+        <Switch
+          id="is_active"
+          checked={formData.is_active}
+          onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+        />
+        <Label htmlFor="is_active">Course Active</Label>
+      </div>
+      
+      <DialogFooter className="pt-4">
+        <Button 
+          variant="outline" 
+          onClick={() => {
+            setIsCreateOpen(false);
+            setEditingCourse(null);
+            setFormData(emptyForm);
+          }}
+        >
+          Cancel
+        </Button>
+        <Button 
+          onClick={onSubmit}
+          disabled={!formData.code || !formData.name || formLoading}
+        >
+          {formLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+          {submitLabel}
+        </Button>
+      </DialogFooter>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-display font-bold">Courses</h2>
-          <p className="text-muted-foreground">Manage course catalog</p>
+          <p className="text-muted-foreground">Manage course catalog & schedules</p>
         </div>
         
         <div className="flex items-center gap-2">
@@ -99,73 +259,30 @@ const CourseManagement: React.FC = () => {
             {erelLessonsExist ? 'EREL Imported' : 'Import EREL'}
           </Button>
           
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <Dialog open={isCreateOpen} onOpenChange={(open) => {
+            setIsCreateOpen(open);
+            if (!open) setFormData(emptyForm);
+          }}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="w-4 h-4" />
                 New Course
               </Button>
             </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Course</DialogTitle>
-              <DialogDescription>
-                Add a new course to the catalog
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Course Code</label>
-                <Input
-                  placeholder="e.g., ERES"
-                  value={newCourse.code}
-                  onChange={(e) => setNewCourse({ ...newCourse, code: e.target.value.toUpperCase() })}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Course Name</label>
-                <Input
-                  placeholder="e.g., English Real-Life Elementary"
-                  value={newCourse.name}
-                  onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Description</label>
-                <Textarea
-                  placeholder="Course description..."
-                  value={newCourse.description}
-                  onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Start Date</label>
-                <Input
-                  type="date"
-                  value={newCourse.start_date}
-                  onChange={(e) => setNewCourse({ ...newCourse, start_date: e.target.value })}
-                />
-              </div>
-            </div>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleCreate}
-                disabled={!newCourse.code || !newCourse.name || createCourse.isPending}
-              >
-                {createCourse.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Create Course
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Create New Course</DialogTitle>
+                <DialogDescription>
+                  Add a new course with schedule settings
+                </DialogDescription>
+              </DialogHeader>
+              <CourseForm 
+                onSubmit={handleCreate} 
+                isLoading={createCourse.isPending}
+                submitLabel="Create Course"
+              />
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -202,34 +319,40 @@ const CourseManagement: React.FC = () => {
                       </div>
                     </div>
                     
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Course</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{course.name}"? This will also delete all lessons and enrollments. This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => deleteCourse.mutate(course.id)}
-                            className="bg-destructive hover:bg-destructive/90"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => openEditDialog(course)}
+                      >
+                        <Edit className="w-4 h-4 text-primary" />
+                      </Button>
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Course</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{course.name}"? This will also delete all lessons and enrollments.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteCourse.mutate(course.id)}
+                              className="bg-destructive hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 </CardHeader>
                 
@@ -240,20 +363,25 @@ const CourseManagement: React.FC = () => {
                     </CardDescription>
                   )}
                   
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    {course.start_date && (
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span>{new Date(course.start_date).toLocaleDateString()}</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {course.start_date && (
+                        <Badge variant="outline" className="gap-1 text-xs">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(course.start_date).toLocaleDateString()}
+                        </Badge>
+                      )}
+                      <Badge variant={course.is_active ? "default" : "secondary"} className="text-xs">
+                        {course.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
+                    
+                    {course.schedule_days && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        <span>{formatScheduleDays(course.schedule_days)}</span>
                       </div>
                     )}
-                    <div className={`px-2 py-0.5 rounded text-xs ${
-                      course.is_active 
-                        ? 'bg-success/10 text-success' 
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {course.is_active ? 'Active' : 'Inactive'}
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -261,6 +389,28 @@ const CourseManagement: React.FC = () => {
           ))}
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingCourse} onOpenChange={(open) => {
+        if (!open) {
+          setEditingCourse(null);
+          setFormData(emptyForm);
+        }
+      }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Course</DialogTitle>
+            <DialogDescription>
+              Update course details and schedule
+            </DialogDescription>
+          </DialogHeader>
+          <CourseForm 
+            onSubmit={handleUpdate} 
+            isLoading={updateCourse.isPending}
+            submitLabel="Save Changes"
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

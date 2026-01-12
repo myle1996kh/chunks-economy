@@ -116,6 +116,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          schedule_days: Json | null
           start_date: string | null
           updated_at: string
         }
@@ -127,6 +128,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          schedule_days?: Json | null
           start_date?: string | null
           updated_at?: string
         }
@@ -138,6 +140,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          schedule_days?: Json | null
           start_date?: string | null
           updated_at?: string
         }
@@ -182,6 +185,7 @@ export type Database = {
           course_id: string
           enrolled_at: string
           id: string
+          start_date: string | null
           status: string
           user_id: string
         }
@@ -190,6 +194,7 @@ export type Database = {
           course_id: string
           enrolled_at?: string
           id?: string
+          start_date?: string | null
           status?: string
           user_id: string
         }
@@ -198,6 +203,7 @@ export type Database = {
           course_id?: string
           enrolled_at?: string
           id?: string
+          start_date?: string | null
           status?: string
           user_id?: string
         }

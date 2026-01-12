@@ -9,6 +9,7 @@ export interface Course {
   name: string;
   description: string | null;
   start_date: string | null;
+  schedule_days: string[] | null;
   created_by: string | null;
   is_active: boolean;
   created_at: string;
@@ -32,6 +33,7 @@ export interface Enrollment {
   user_id: string;
   course_id: string;
   enrolled_at: string;
+  start_date: string | null;
   status: string;
   completed_at: string | null;
 }
@@ -129,6 +131,29 @@ export const useCreateCourse = () => {
     },
     onError: (error) => {
       toast.error(`Failed to create course: ${error.message}`);
+    }
+  });
+};
+
+export const useUpdateCourse = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (course: Partial<Course> & { id: string }) => {
+      const { id, ...updates } = course;
+      const { error } = await supabase
+        .from('courses')
+        .update(updates)
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+      toast.success('Course updated successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to update course: ${error.message}`);
     }
   });
 };
@@ -231,14 +256,15 @@ export const useEnrollInCourse = () => {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (courseId: string) => {
+    mutationFn: async ({ courseId, startDate }: { courseId: string; startDate?: string }) => {
       if (!user?.id) throw new Error('Not authenticated');
       
       const { data, error } = await supabase
         .from('enrollments')
         .insert({
           user_id: user.id,
-          course_id: courseId
+          course_id: courseId,
+          start_date: startDate || null
         })
         .select()
         .single();

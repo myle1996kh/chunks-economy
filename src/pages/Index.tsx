@@ -6,16 +6,24 @@ import {
   Mic,
   Loader2,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  CheckCircle2,
+  Clock,
+  AlertCircle
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/hooks/useUserData";
 import { useCourses, useEnrollments, useCourseLessons } from "@/hooks/useCourses";
 import { useUserStats } from "@/hooks/usePractice";
+import { useProgressStats } from "@/hooks/useProgressStats";
 import { CoinBadge } from "@/components/ui/CoinBadge";
 import { useWallet } from "@/hooks/useUserData";
+import { calculateLessonDeadlines, getDeadlineStatus } from "@/lib/scheduleUtils";
+import { cn } from "@/lib/utils";
 
 const Index = () => {
   const { data: profile } = useProfile();
@@ -23,14 +31,34 @@ const Index = () => {
   const { data: enrollments, isLoading: enrollmentsLoading } = useEnrollments();
   const { data: userStats } = useUserStats();
   const { data: wallet } = useWallet();
+  const { data: progressStats } = useProgressStats();
 
   const enrolledCourseIds = enrollments?.map(e => e.course_id) || [];
-  const firstEnrolledCourse = courses?.find(c => enrolledCourseIds.includes(c.id));
+  const firstEnrollment = enrollments?.[0];
+  const firstEnrolledCourse = courses?.find(c => c.id === firstEnrollment?.course_id);
 
   const { data: lessons } = useCourseLessons(firstEnrolledCourse?.id || null);
 
-  // Find next lesson to practice (first one with items)
-  const nextLesson = lessons?.[0];
+  // Calculate deadlines based on enrollment start date
+  const lessonDeadlines = firstEnrollment?.start_date && lessons 
+    ? calculateLessonDeadlines(
+        firstEnrollment.start_date,
+        firstEnrolledCourse?.schedule_days || ['monday', 'wednesday', 'friday'],
+        lessons.map(l => ({ id: l.id, lesson_name: l.lesson_name, order_index: l.order_index }))
+      )
+    : null;
+
+  // Find lesson progress from progressStats
+  const getLessonProgress = (lessonId: string) => {
+    const courseProgress = progressStats?.courses?.find(c => c.courseId === firstEnrolledCourse?.id);
+    return courseProgress?.lessons.find(l => l.lessonId === lessonId);
+  };
+
+  // Find next lesson to practice (first incomplete one)
+  const nextLesson = lessons?.find(lesson => {
+    const progress = getLessonProgress(lesson.id);
+    return !progress || progress.completionPercent < 100;
+  }) || lessons?.[0];
 
   const isLoading = coursesLoading || enrollmentsLoading;
 
@@ -83,7 +111,19 @@ const Index = () => {
                 </div>
               </div>
               
-              {userStats?.avgScore && (
+              {progressStats?.overallCompletion !== undefined && progressStats.overallCompletion > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold">{progressStats.overallCompletion}%</div>
+                    <div className="text-xs text-muted-foreground">complete</div>
+                  </div>
+                </div>
+              )}
+              
+              {userStats?.avgScore && userStats.avgScore > 0 && (
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-success/20 flex items-center justify-center">
                     <Sparkles className="w-4 h-4 text-success" />
@@ -107,7 +147,6 @@ const Index = () => {
             >
               <Link to={`/practice?lesson=${nextLesson.id}`}>
                 <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/30 p-6 lg:p-8 cursor-pointer transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10">
-                  {/* Background glow effect */}
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   
                   <div className="relative flex items-center justify-between">
@@ -166,7 +205,7 @@ const Index = () => {
             </motion.div>
           ) : null}
 
-          {/* Quick Lesson List */}
+          {/* Lesson List with Progress & Deadlines */}
           {hasEnrolledCourses && lessons && lessons.length > 0 && (
             <motion.section
               initial={{ opacity: 0, y: 20 }}
@@ -175,7 +214,7 @@ const Index = () => {
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-display font-semibold text-foreground">
-                  All Lessons
+                  {firstEnrolledCourse?.name || 'Lessons'}
                 </h2>
                 <Link to="/courses" className="text-sm text-primary hover:underline">
                   View all →
@@ -183,29 +222,89 @@ const Index = () => {
               </div>
 
               <div className="space-y-2">
-                {lessons.slice(0, 5).map((lesson, index) => (
-                  <Link key={lesson.id} to={`/practice?lesson=${lesson.id}`}>
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.05 * index }}
-                      className="group flex items-center gap-4 p-4 rounded-xl bg-card/50 border border-border/30 hover:bg-card hover:border-border/50 transition-all cursor-pointer"
-                    >
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-                        {lesson.order_index}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
-                          {lesson.lesson_name}
-                        </h3>
-                        <p className="text-xs text-muted-foreground">
-                          {Object.keys(lesson.categories || {}).length} categories
-                        </p>
-                      </div>
-                      <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </motion.div>
-                  </Link>
-                ))}
+                {lessons.slice(0, 6).map((lesson, index) => {
+                  const progress = getLessonProgress(lesson.id);
+                  const deadline = lessonDeadlines?.find(d => d.lessonId === lesson.id);
+                  const deadlineStatus = deadline ? getDeadlineStatus(deadline) : null;
+                  const isComplete = progress?.completionPercent === 100;
+
+                  return (
+                    <Link key={lesson.id} to={`/practice?lesson=${lesson.id}`}>
+                      <motion.div
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.05 * index }}
+                        className={cn(
+                          "group flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer",
+                          isComplete 
+                            ? "bg-success/5 border-success/30 hover:border-success/50" 
+                            : "bg-card/50 border-border/30 hover:bg-card hover:border-border/50"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold",
+                          isComplete 
+                            ? "bg-success/20 text-success" 
+                            : "bg-primary/10 text-primary"
+                        )}>
+                          {isComplete ? <CheckCircle2 className="w-5 h-5" /> : lesson.order_index}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                              {lesson.lesson_name}
+                            </h3>
+                          </div>
+                          
+                          <div className="flex items-center gap-3">
+                            {progress && progress.completionPercent > 0 && (
+                              <div className="flex items-center gap-2 flex-1 max-w-[120px]">
+                                <Progress value={progress.completionPercent} className="h-1.5" />
+                                <span className="text-xs text-muted-foreground shrink-0">
+                                  {progress.completionPercent}%
+                                </span>
+                              </div>
+                            )}
+                            
+                            {!progress && (
+                              <span className="text-xs text-muted-foreground">
+                                {Object.keys(lesson.categories || {}).length} categories
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Deadline badge */}
+                        {deadline && !isComplete && (
+                          <Badge 
+                            variant={deadlineStatus?.variant} 
+                            className={cn("text-xs gap-1 shrink-0", deadlineStatus?.className)}
+                          >
+                            {deadline.isPast ? (
+                              <AlertCircle className="w-3 h-3" />
+                            ) : (
+                              <Clock className="w-3 h-3" />
+                            )}
+                            {deadlineStatus?.label}
+                          </Badge>
+                        )}
+
+                        {progress && progress.avgScore > 0 && (
+                          <span className={cn(
+                            "text-sm font-medium shrink-0",
+                            progress.avgScore >= 80 ? "text-success" : 
+                            progress.avgScore >= 60 ? "text-warning" : "text-muted-foreground"
+                          )}>
+                            {progress.avgScore}%
+                          </span>
+                        )}
+                        
+                        <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      </motion.div>
+                    </Link>
+                  );
+                })}
               </div>
             </motion.section>
           )}
