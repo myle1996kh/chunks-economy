@@ -37,11 +37,11 @@
         "Vietnamese": "Heo nướng / bò nướng"
       },
       {
-        "English": "Go Dutch /\n split the bill / share the bill",
-        "Vietnamese": "Cưa “bill”"
+        "English": "Go Dutch / split the bill / share the bill",
+        "Vietnamese": "Cưa bill"
       },
       {
-        "English": "It’s on me / my treat",
+        "English": "It's on me / my treat",
         "Vietnamese": "Tôi mời"
       },
       {
@@ -53,7 +53,7 @@
         "Vietnamese": "Nước dừa"
       },
       {
-        "English": "It’s a bomb / blast",
+        "English": "It's a bomb / blast",
         "Vietnamese": "Ngon banh xác"
       },
       {
@@ -107,72 +107,72 @@
     ],
     "Phrase": [
       {
-        "English": "I'm getting kinda full now / \n I'm quite full now",
-        "Vietnamese": "Loading..."
+        "English": "I'm getting kinda full now / I'm quite full now",
+        "Vietnamese": "Giờ tui hơi no no rồi đấy"
       },
       {
-        "English": "This is the 1st time I've had \n grilled pork like this",
+        "English": "This is the 1st time I've had grilled pork like this",
         "Vietnamese": "Lần đầu tiên tôi ăn thịt heo nướng như thế này"
       },
       {
-        "English": "If you ever come to SG, \n definitely check out this place",
-        "Vietnamese": "Loading..."
+        "English": "If you ever come to SG, definitely check out this place",
+        "Vietnamese": "Nếu cậu có dịp đến Sài Gòn, nhất định phải ghé chỗ này"
       },
       {
         "English": "It's on me tonight, next time it's your turn",
-        "Vietnamese": "Loading..."
+        "Vietnamese": "Tối nay tôi mời, lần sau đến lượt cậu"
       },
       {
         "English": "It's been a long time since I last had banh mì",
-        "Vietnamese": "Loading..."
+        "Vietnamese": "Lâu lắm rồi tôi chưa ăn bánh mì"
       },
       {
         "English": "Now we'll go eat, what do you say?",
-        "Vietnamese": "Loading..."
+        "Vietnamese": "Giờ mình đi ăn, ý cậu sao?"
       },
       {
         "English": "We'll go Dutch, what do you say?",
-        "Vietnamese": "Loading..."
+        "Vietnamese": "Mình cưa bill nhé, ý cậu sao?"
       },
       {
         "English": "Trust me, it's a bomb",
-        "Vietnamese": "Tin tôi đi, nó là một quả bom"
+        "Vietnamese": "Tin tôi đi, ngon banh xác luôn"
       },
       {
-        "English": "I just ordered 6 of them, \n you wanna order more?",
+        "English": "I just ordered 6 of them, you wanna order more?",
         "Vietnamese": "Tớ vừa đặt 6 cái, muốn đặt thêm không?"
       },
       {
         "English": "This food will be served with coconut water",
-        "Vietnamese": "Món này sẽ được phục vụ kèm nước dừa."
+        "Vietnamese": "Món này sẽ được phục vụ kèm nước dừa"
       },
       {
-        "English": "I like doing the sights whenever \n I have a chance to visit a big city",
-        "Vietnamese": "Loading..."
+        "English": "I like doing the sights whenever I have a chance to visit a big city",
+        "Vietnamese": "Tôi thích đi tham quan mỗi khi có dịp đến thành phố lớn"
       },
       {
         "English": "Vietnamese street food culture",
-        "Vietnamese": "Loading..."
+        "Vietnamese": "Văn hóa ẩm thực đường phố Việt Nam"
       },
       {
-        "English": "Sweet and sour fish sauce \n is all I want right now",
-        "Vietnamese": "Mắm nêm chua ngọt \n là cái tôi muốn ngay bây giờ"
+        "English": "Sweet and sour fish sauce is all I want right now",
+        "Vietnamese": "Mắm nêm chua ngọt là cái tôi muốn ngay bây giờ"
       },
       {
         "English": "I just ordered myself a big-ass tentacle",
-        "Vietnamese": "Tao vừa đặt một con mực khổng lồ cho mình đây."
+        "Vietnamese": "Tao vừa đặt một con mực khổng lồ cho mình đây"
       },
       {
         "English": "You need to boil it in coconut water hours in advance",
-        "Vietnamese": "Bạn cần đun nó trong nước cốt dừa từ vài giờ trước."
+        "Vietnamese": "Bạn cần đun nó trong nước cốt dừa từ vài giờ trước"
       },
       {
-        "English": "There’re some fruits in the fridge, \n help yourself",
+        "English": "There're some fruits in the fridge, help yourself",
         "Vietnamese": "Có một số trái cây trong tủ lạnh, tự lấy nhé"
       },
       {
         "English": "On the outside, it's very gooey",
-        "Vietnamese": "Loading..."
+        "Vietnamese": "Bên ngoài, nó rất nhơm nhớp"
       },
       {
         "English": "This city is known for fried bananas",
@@ -184,54 +184,54 @@
       },
       {
         "English": "She must have deep fried it in advance",
-        "Vietnamese": "Loading..."
+        "Vietnamese": "Chắc cô ấy đã chiên ngập dầu từ trước"
       }
     ],
     "Sentence": [
       {
-        "English": "Seriously, \nthis grilled beef is a bomb, \nyou have to give it a try!",
-        "Vietnamese": "Thiệt, \nmón bò nướng này ngon banh xác, \ncậu là phải thử!"
+        "English": "Seriously, this grilled beef is a bomb, you have to give it a try!",
+        "Vietnamese": "Thiệt, món bò nướng này ngon banh xác, cậu là phải thử!"
       },
       {
-        "English": "Blame yourself \nyou asked me too late, \nmaybe some other time",
-        "Vietnamese": "Ai biểu \ncậu rủ tôi trễ quá, \nchắc để khi khác đi"
+        "English": "Blame yourself you asked me too late, maybe some other time",
+        "Vietnamese": "Ai biểu cậu rủ tôi trễ quá, chắc để khi khác đi"
       },
       {
-        "English": "Who on earth would \neat rice with herbs???",
-        "Vietnamese": "Ai đời lại\n ăn cơm với rau thơm???"
+        "English": "Who on earth would eat rice with herbs???",
+        "Vietnamese": "Ai đời lại ăn cơm với rau thơm???"
       },
       {
-        "English": "Basically, \nthe tentacle will be served with sweet and sour fish sauce and herbs",
-        "Vietnamese": "Về cơ bản, \nrâu mực sẽ được phục vụ chung với nước mắm chua ngọt và rau thơm"
+        "English": "Basically, the tentacle will be served with sweet and sour fish sauce and herbs",
+        "Vietnamese": "Về cơ bản, râu mực sẽ được phục vụ chung với nước mắm chua ngọt và rau thơm"
       },
       {
-        "English": "A moment ago,\n I saw you order 2 big-ass tentacles",
-        "Vietnamese": "Mới hồi nãy,\n tôi thấy cậu order 2 cái râu mực to chà bá mà"
+        "English": "A moment ago, I saw you order 2 big-ass tentacles",
+        "Vietnamese": "Mới hồi nãy, tôi thấy cậu order 2 cái râu mực to chà bá mà"
       },
       {
-        "English": "Long story short,\n I need you to wash these tentacles, okay?",
-        "Vietnamese": "Nói tóm lại, \ntôi cần cậu rửa mấy cái râu mực này, okay?"
+        "English": "Long story short, I need you to wash these tentacles, okay?",
+        "Vietnamese": "Nói tóm lại, tôi cần cậu rửa mấy cái râu mực này, okay?"
       },
       {
-        "English": "We'll do the sights,\n then we'll go eat steamed snails with lemongrass,\n what do you say?",
-        "Vietnamese": "Tụi mình sẽ đi tham quan, sau đó tụi mình đi ăn ốc bưu hấp xả, \ný cậu sao?"
+        "English": "We'll do the sights, then we'll go eat steamed snails with lemongrass, what do you say?",
+        "Vietnamese": "Tụi mình sẽ đi tham quan, sau đó tụi mình đi ăn ốc bưu hấp xả, ý cậu sao?"
       },
       {
-        "English": "I think \n 10 pieces of lemongrass will be more than enough for this food",
-        "Vietnamese": "Tôi nghĩ \n10 cọng xả sẽ là quá đủ cho món này"
+        "English": "I think 10 pieces of lemongrass will be more than enough for this food",
+        "Vietnamese": "Tôi nghĩ 10 cọng xả sẽ là quá đủ cho món này"
       },
       {
-        "English": "On the outside, it's kinda gooey \n but on the inside, the meat of the snails is quite crunchy",
-        "Vietnamese": "Bên ngoài, nó khá là nhơm nhớp \nnhưng bên trong, thịt ốc bưu khá là sực sực"
+        "English": "On the outside, it's kinda gooey but on the inside, the meat of the snails is quite crunchy",
+        "Vietnamese": "Bên ngoài, nó khá là nhơm nhớp nhưng bên trong, thịt ốc bưu khá là sực sực"
       }
     ],
     "Review": [
       {
-        "English": "Blame yourself, you didn’t believe me!",
+        "English": "Blame yourself, you didn't believe me!",
         "Vietnamese": "Ai biểu cậu không tin tui!"
       },
       {
-        "English": "It’s a bomb, give it a try",
+        "English": "It's a bomb, give it a try",
         "Vietnamese": "Món này ngon banh xác, thử đi"
       },
       {
@@ -244,7 +244,7 @@
       },
       {
         "English": "A moment ago, you said we were gonna go Dutch",
-        "Vietnamese": "Mới nãy, cậu bảo tụi mình sẽ cưa “bill” mà"
+        "Vietnamese": "Mới nãy, cậu bảo tụi mình sẽ cưa bill mà"
       },
       {
         "English": "Remember to put the herbs on the top",
@@ -259,7 +259,7 @@
         "Vietnamese": "Nhúng nó vào nước mắm chua ngọt"
       },
       {
-        "English": "It’s on me tonight",
+        "English": "It's on me tonight",
         "Vietnamese": "Tối nay tôi mời"
       },
       {
@@ -267,7 +267,7 @@
         "Vietnamese": "Ở bên ngoài, nó trông khá là nhơm nhớp"
       },
       {
-        "English": "I’m getting kinda full now",
+        "English": "I'm getting kinda full now",
         "Vietnamese": "Giờ tui hơi no no rồi đấy"
       },
       {
@@ -279,7 +279,7 @@
         "Vietnamese": "Văn hóa ẩm thực đường phố VN"
       },
       {
-        "English": "Basically, I don’t like tentacle",
+        "English": "Basically, I don't like tentacle",
         "Vietnamese": "Về cơ bản, tôi không thích râu mực"
       },
       {
@@ -288,7 +288,7 @@
       },
       {
         "English": "Seriously, Mekong delta is my hometown",
-        "Vietnamese": "Thiệt, DBSCL là quê tôi ấy"
+        "Vietnamese": "Thiệt, ĐBSCL là quê tôi ấy"
       },
       {
         "English": "Speaking of sauce, fish sauce is the best",
