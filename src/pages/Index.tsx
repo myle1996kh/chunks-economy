@@ -1,108 +1,38 @@
-import { useEffect, useState } from "react";
-
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
   BookOpen,
-  Target,
   Flame,
-  TrendingUp,
-  Clock,
   Mic,
   Loader2,
-  History,
-  ArrowRight
+  ArrowRight,
+  Sparkles
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { StatsCard } from "@/components/dashboard/StatsCard";
-import { CourseCard } from "@/components/dashboard/CourseCard";
-import { LessonItem } from "@/components/dashboard/LessonItem";
-import { CategoryTabs } from "@/components/dashboard/CategoryTabs";
-import { PracticeItemCard } from "@/components/dashboard/PracticeItemCard";
-import { PracticeModal } from "@/components/practice/PracticeModal";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/hooks/useUserData";
-import { useCourses, useEnrollments, useCourseLessons, useEnrollInCourse, Lesson } from "@/hooks/useCourses";
-import { useUserStats, useUserProgress } from "@/hooks/usePractice";
-import { useTextToSpeech } from "@/hooks/useTextToSpeech";
-import { formatDistanceToNow } from "date-fns";
+import { useCourses, useEnrollments, useCourseLessons } from "@/hooks/useCourses";
+import { useUserStats } from "@/hooks/usePractice";
+import { CoinBadge } from "@/components/ui/CoinBadge";
+import { useWallet } from "@/hooks/useUserData";
 
 const Index = () => {
-  const { user } = useAuth();
   const { data: profile } = useProfile();
   const { data: courses, isLoading: coursesLoading } = useCourses();
   const { data: enrollments, isLoading: enrollmentsLoading } = useEnrollments();
   const { data: userStats } = useUserStats();
-  const enrollInCourse = useEnrollInCourse();
-  const tts = useTextToSpeech();
+  const { data: wallet } = useWallet();
 
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [isPracticeOpen, setIsPracticeOpen] = useState(false);
-
-
-  // Get user progress for selected lesson
-  const { data: lessonProgress } = useUserProgress(selectedLesson?.id);
-
-  // Get enrolled course IDs
   const enrolledCourseIds = enrollments?.map(e => e.course_id) || [];
-
-  // Find first enrolled course for lessons display
   const firstEnrolledCourse = courses?.find(c => enrolledCourseIds.includes(c.id));
 
-  // Fetch lessons for the selected/first enrolled course
-  const { data: lessons, isLoading: lessonsLoading } = useCourseLessons(
-    selectedCourseId || firstEnrolledCourse?.id || null
-  );
+  const { data: lessons } = useCourseLessons(firstEnrolledCourse?.id || null);
 
-  // Get categories from selected lesson
-  const lessonCategories = selectedLesson?.categories
-    ? Object.entries(selectedLesson.categories).map(([name, items]) => ({
-      id: name.toLowerCase(),
-      name,
-      count: (items as any[]).length
-    }))
-    : [];
-
-  const normalizedActiveCategory = activeCategory || lessonCategories[0]?.name || "";
-
-  // Get practice items for active category with mastery status
-  const practiceItems = selectedLesson?.categories?.[normalizedActiveCategory] || [];
-  const practiceItemsWithMastery = practiceItems.map((item: any, index: number) => {
-    const progress = lessonProgress?.find(
-      p => p.category === normalizedActiveCategory && p.item_index === index
-    );
-    return {
-      ...item,
-      mastered: (progress?.mastery_level || 0) >= 3,
-      bestScore: progress?.best_score || 0,
-      attempts: progress?.attempts || 0
-    };
-  });
-
-  useEffect(() => {
-    if (!selectedCourseId && firstEnrolledCourse?.id) {
-      setSelectedCourseId(firstEnrolledCourse.id);
-    }
-  }, [firstEnrolledCourse, selectedCourseId]);
-
-  useEffect(() => {
-    if (lessons?.length && !selectedLesson) {
-      setSelectedLesson(lessons[0]);
-    }
-  }, [lessons, selectedLesson]);
-
-  useEffect(() => {
-    if (!activeCategory && lessonCategories.length) {
-      setActiveCategory(lessonCategories[0].name);
-    }
-  }, [activeCategory, lessonCategories]);
+  // Find next lesson to practice (first one with items)
+  const nextLesson = lessons?.[0];
 
   const isLoading = coursesLoading || enrollmentsLoading;
-
 
   if (isLoading) {
     return (
@@ -112,306 +42,175 @@ const Index = () => {
     );
   }
 
+  const hasEnrolledCourses = enrolledCourseIds.length > 0;
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
 
       <main className="lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
+        <div className="max-w-3xl mx-auto">
+          {/* Compact Header with Stats */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <h1 className="text-2xl lg:text-3xl font-display font-bold text-foreground mb-2">
-              Welcome back, {profile?.display_name || "Learner"}
-            </h1>
-            <p className="text-muted-foreground">
-              Keep your streak alive and practice in short bursts.
-            </p>
-
-          </motion.div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <StatsCard
-              title="Current Streak"
-              value={`${userStats?.streak || 0} days`}
-              icon={Flame}
-              variant="primary"
-            />
-            <StatsCard
-              title="Enrolled Courses"
-              value={enrolledCourseIds.length.toString()}
-              subtitle={`out of ${courses?.length || 0}`}
-              icon={BookOpen}
-              variant="default"
-            />
-            <StatsCard
-              title="Average Score"
-              value={userStats?.avgScore ? `${userStats.avgScore}%` : "--"}
-              subtitle={userStats?.totalPractice ? `${userStats.totalPractice} practices` : undefined}
-              icon={Target}
-              variant="success"
-            />
-            <StatsCard
-              title="Practice Time"
-              value={`${userStats?.practiceHours || 0}h`}
-              subtitle="this week"
-              icon={Clock}
-              variant="accent"
-            />
-          </div>
-
-
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6">
-            {/* Courses & Lessons */}
-            <div className="space-y-6">
-
-              {/* Available Courses */}
-              <motion.section
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-display font-semibold text-foreground">
-                    {enrolledCourseIds.length > 0 ? "Your Courses" : "Available Courses"}
-                  </h2>
-                </div>
-
-                {courses?.length === 0 ? (
-                  <div className="p-10 rounded-2xl border border-dashed border-border/50 text-center bg-gradient-to-br from-primary/5 via-background to-transparent">
-                    <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">
-                      No courses available yet. Check back soon!
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {courses?.map((course) => {
-                      const isEnrolled = enrolledCourseIds.includes(course.id);
-                      return (
-                        <CourseCard
-                          key={course.id}
-                          code={course.code}
-                          name={course.name}
-                          description={course.description || ""}
-                          lessonsCount={15}
-                          studentsCount={0}
-                          enrolled={isEnrolled}
-                          onEnroll={() => enrollInCourse.mutate(course.id)}
-                          onContinue={() => setSelectedCourseId(course.id)}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-              </motion.section>
-
-
-              {/* Lessons */}
-              {(selectedCourseId || firstEnrolledCourse) && (
-                <motion.section
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-display font-semibold text-foreground">
-                      {courses?.find(c => c.id === (selectedCourseId || firstEnrolledCourse?.id))?.code} Lessons
-                    </h2>
-                    <span className="text-sm text-muted-foreground">
-                      {lessons?.length || 0} lessons
-                    </span>
-                  </div>
-
-                  {lessonsLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                    </div>
-                  ) : lessons?.length === 0 ? (
-                    <div className="p-8 rounded-2xl border border-dashed border-border/50 text-center">
-                      <p className="text-muted-foreground">
-                        No lessons in this course yet.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {lessons?.map((lesson) => (
-                        <LessonItem
-                          key={lesson.id}
-                          index={lesson.order_index}
-                          name={lesson.lesson_name}
-                          categories={Object.entries(lesson.categories || {}).map(([name, items]) => ({
-                            name,
-                            count: (items as any[]).length
-                          }))}
-                          deadline={lesson.deadline_date ? new Date(lesson.deadline_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : undefined}
-                          status="available"
-                          onClick={() => {
-                            setSelectedLesson(lesson);
-                            setActiveCategory(null);
-                          }}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </motion.section>
-              )}
-
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-display font-bold text-foreground">
+                  Hey, {profile?.display_name?.split(' ')[0] || "there"} 👋
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  {hasEnrolledCourses 
+                    ? "Ready for today's practice?" 
+                    : "Let's get you started with a course"
+                  }
+                </p>
+              </div>
+              <CoinBadge amount={wallet?.balance || 0} size="lg" />
             </div>
 
-            {/* Practice Panel */}
+            {/* Minimal Stats Row */}
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center">
+                  <Flame className="w-4 h-4 text-orange-500" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold">{userStats?.streak || 0} days</div>
+                  <div className="text-xs text-muted-foreground">streak</div>
+                </div>
+              </div>
+              
+              {userStats?.avgScore && (
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-success/20 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-success" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold">{userStats.avgScore}%</div>
+                    <div className="text-xs text-muted-foreground">avg score</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Primary CTA - Start Practice */}
+          {hasEnrolledCourses && nextLesson ? (
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-              className="space-y-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="mb-8"
             >
-              {/* Quick Practice */}
-              <div className="p-6 rounded-2xl bg-card border border-border/50 sticky top-24">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-display font-semibold text-lg">
-                    {selectedLesson ? "Quick Practice" : "Quick Practice"}
-                  </h3>
-                  {selectedLesson && (
-                    <Badge variant="outline" className="text-xs">
-                      {normalizedActiveCategory || "Category"}
-                    </Badge>
-                  )}
-                </div>
-                {selectedLesson ? (
-                  <>
-                    <div className="rounded-xl border border-border/50 bg-secondary/30 p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Lesson</p>
-                          <p className="font-semibold text-foreground">
-                            {selectedLesson.lesson_name}
-                          </p>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => setIsPracticeOpen(true)}
-                          className="gap-2"
-                        >
-                          <Mic size={14} />
-                          Start
-                        </Button>
+              <Link to={`/practice?lesson=${nextLesson.id}`}>
+                <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/30 p-6 lg:p-8 cursor-pointer transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10">
+                  {/* Background glow effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  
+                  <div className="relative flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Mic className="w-5 h-5 text-primary" />
+                        <span className="text-sm font-medium text-primary">Continue Learning</span>
                       </div>
-                      <div className="mt-3 text-xs text-muted-foreground">
-                        {practiceItems.length} items • {practiceItemsWithMastery.filter((i: any) => i.mastered).length} mastered
-                      </div>
+                      <h2 className="text-xl lg:text-2xl font-display font-bold text-foreground mb-2">
+                        {nextLesson.lesson_name}
+                      </h2>
+                      <p className="text-muted-foreground text-sm">
+                        {Object.keys(nextLesson.categories || {}).length} categories • 
+                        {Object.values(nextLesson.categories || {}).reduce((sum: number, items: any) => sum + items.length, 0)} items
+                      </p>
                     </div>
-
-                    <div className="mt-4">
-                      <CategoryTabs
-                        categories={lessonCategories}
-                        activeCategory={normalizedActiveCategory.toLowerCase()}
-                        onSelect={(cat) => {
-                          const originalCat = Object.keys(selectedLesson.categories || {}).find(
-                            k => k.toLowerCase() === cat
-                          );
-                          if (originalCat) setActiveCategory(originalCat);
-                        }}
-                      />
-                    </div>
-
-                    <div className="mt-4 space-y-2 max-h-[280px] overflow-y-auto">
-                      {practiceItemsWithMastery.slice(0, 4).map((item: any, i: number) => (
-                        <PracticeItemCard
-                          key={`${normalizedActiveCategory}-${i}`}
-                          english={item.English}
-                          vietnamese={item.Vietnamese}
-                          mastered={item.mastered}
-                          onClick={() => setIsPracticeOpen(true)}
-                          onListen={() => tts.speak(item.English)}
-                        />
-                      ))}
-                    </div>
-                    <Button
-                      className="w-full mt-4 gradient-primary text-primary-foreground"
-                      onClick={() => setIsPracticeOpen(true)}
-                    >
-                      <Mic size={18} className="mr-2" />
-                      Start Practice Session
+                    
+                    <Button size="lg" className="gradient-primary glow-primary gap-2 shrink-0">
+                      Start Practice
+                      <ArrowRight className="w-4 h-4" />
                     </Button>
-                  </>
-                ) : (
-                  <div className="text-center py-8">
-                    <Mic className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">
-                      Select a lesson to start practicing
-                    </p>
                   </div>
-                )}
-              </div>
-
-
-              {/* Recent Activity */}
-              <div className="p-6 rounded-2xl bg-card border border-border/50">
-                <div className="flex items-center gap-2 mb-4">
-                  <History className="w-5 h-5 text-muted-foreground" />
-                  <h3 className="font-display font-semibold text-lg">
-                    Recent Activity
-                  </h3>
                 </div>
-                {userStats?.recentHistory && userStats.recentHistory.length > 0 ? (
-                  <div className="space-y-3">
-                    {userStats.recentHistory.slice(0, 5).map((history: any, i: number) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between py-2 border-b border-border/30 last:border-0"
-                      >
-                        <div>
-                          <div className={`text-sm font-medium ${history.score >= 70 ? "text-success" : "text-muted-foreground"
-                            }`}>
-                            Score: {history.score}%
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(history.practiced_at), { addSuffix: true })}
-                          </div>
-                        </div>
-                        <div className={`text-sm font-medium ${history.coins_earned >= 0 ? "text-success" : "text-destructive"
-                          }`}>
-                          {history.coins_earned >= 0 ? "+" : ""}{history.coins_earned} C
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground">
-                      No activity yet. Start practicing to see your progress!
-                    </p>
-                  </div>
-                )}
-              </div>
+              </Link>
             </motion.div>
-          </div>
+          ) : !hasEnrolledCourses ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="mb-8"
+            >
+              <Link to="/courses">
+                <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-accent/20 via-accent/10 to-transparent border border-accent/30 p-6 lg:p-8 cursor-pointer transition-all hover:border-accent/50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <BookOpen className="w-5 h-5 text-accent" />
+                        <span className="text-sm font-medium text-accent">Get Started</span>
+                      </div>
+                      <h2 className="text-xl lg:text-2xl font-display font-bold text-foreground mb-2">
+                        Enroll in Your First Course
+                      </h2>
+                      <p className="text-muted-foreground text-sm">
+                        Browse available courses and start learning
+                      </p>
+                    </div>
+                    
+                    <Button size="lg" className="gradient-gold gap-2">
+                      Browse Courses
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
+          ) : null}
+
+          {/* Quick Lesson List */}
+          {hasEnrolledCourses && lessons && lessons.length > 0 && (
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-display font-semibold text-foreground">
+                  All Lessons
+                </h2>
+                <Link to="/courses" className="text-sm text-primary hover:underline">
+                  View all →
+                </Link>
+              </div>
+
+              <div className="space-y-2">
+                {lessons.slice(0, 5).map((lesson, index) => (
+                  <Link key={lesson.id} to={`/practice?lesson=${lesson.id}`}>
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.05 * index }}
+                      className="group flex items-center gap-4 p-4 rounded-xl bg-card/50 border border-border/30 hover:bg-card hover:border-border/50 transition-all cursor-pointer"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
+                        {lesson.order_index}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                          {lesson.lesson_name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          {Object.keys(lesson.categories || {}).length} categories
+                        </p>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </motion.div>
+                  </Link>
+                ))}
+              </div>
+            </motion.section>
+          )}
         </div>
       </main>
-
-      {/* Practice Modal */}
-      {selectedLesson && (
-        <PracticeModal
-          isOpen={isPracticeOpen}
-          onClose={() => setIsPracticeOpen(false)}
-          lessonId={selectedLesson.id}
-          lessonName={selectedLesson.lesson_name}
-          category={normalizedActiveCategory}
-          items={practiceItemsWithMastery.map((item: any) => ({
-            english: item.English,
-            vietnamese: item.Vietnamese,
-            mastered: item.mastered
-          }))}
-        />
-      )}
-
     </div>
   );
 };
