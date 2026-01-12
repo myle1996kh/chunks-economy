@@ -13,7 +13,10 @@ import {
   Loader2,
   ArrowLeft,
   Play,
-  Square
+  Square,
+  LayoutGrid,
+  Calendar,
+  CalendarDays
 } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Button } from "@/components/ui/button";
@@ -22,6 +25,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CoinBadge } from "@/components/ui/CoinBadge";
 import { AudioWaveform } from "@/components/ui/AudioWaveform";
 import { ScoreDisplay } from "@/components/practice/ScoreDisplay";
+import { LessonGridView } from "@/components/practice/LessonGridView";
+import { LessonCalendarView } from "@/components/practice/LessonCalendarView";
+import { LessonWeekView } from "@/components/practice/LessonWeekView";
 import { useEnrollments, useCourseLessons, Lesson } from "@/hooks/useCourses";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
@@ -29,8 +35,12 @@ import { useSavePractice, useUserProgress } from "@/hooks/usePractice";
 import { analyzeAudioAsync, AnalysisResult } from "@/lib/audioAnalysis";
 import { useCoinConfig } from "@/hooks/useCoinWallet";
 import { useWallet } from "@/hooks/useUserData";
+import { useProgressStats } from "@/hooks/useProgressStats";
+import { calculateLessonDeadlines } from "@/lib/scheduleUtils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
+type ViewMode = 'list' | 'grid' | 'calendar' | 'week';
 
 const Practice = () => {
   const [searchParams] = useSearchParams();
@@ -39,12 +49,17 @@ const Practice = () => {
   const { data: enrollments } = useEnrollments();
   const { data: wallet } = useWallet();
   const { data: coinConfig } = useCoinConfig();
+  const { data: progressStats } = useProgressStats();
   
   const enrolledCourseIds = enrollments?.map(e => e.course_id) || [];
   const firstCourseId = enrolledCourseIds[0];
+  const firstEnrollment = enrollments?.[0];
+  const enrolledClass = firstEnrollment?.course_classes;
+  const enrolledCourse = firstEnrollment?.courses;
   
   const { data: lessons, isLoading: lessonsLoading } = useCourseLessons(firstCourseId || null);
   
+  const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("");
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
@@ -58,6 +73,21 @@ const Practice = () => {
   const savePractice = useSavePractice();
 
   const { data: lessonProgress } = useUserProgress(selectedLesson?.id);
+
+  // Calculate deadlines based on class schedule
+  const lessonDeadlines = firstEnrollment && lessons 
+    ? calculateLessonDeadlines(
+        enrolledClass?.start_date || firstEnrollment.start_date || new Date().toISOString(),
+        enrolledClass?.schedule_days || ['monday', 'wednesday', 'friday'],
+        lessons.map(l => ({ id: l.id, lesson_name: l.lesson_name, order_index: l.order_index }))
+      )
+    : null;
+
+  // Find lesson progress from progressStats
+  const getLessonProgress = (lessonId: string) => {
+    const classProgress = progressStats?.classes?.find(c => c.courseId === enrolledCourse?.id);
+    return classProgress?.lessons.find(l => l.lessonId === lessonId);
+  };
 
   // Auto-select lesson from URL param
   useEffect(() => {
@@ -207,14 +237,64 @@ const Practice = () => {
     );
   }
 
-  // No lesson selected - show lesson picker
+  // No lesson selected - show lesson picker with multiple views
   if (!selectedLesson) {
+    const handleSelectLesson = (lesson: Lesson) => {
+      setSelectedLesson(lesson);
+      const cats = Object.keys(lesson.categories || {});
+      if (cats.length > 0) setActiveCategory(cats[0]);
+    };
+
     return (
       <div className="min-h-screen bg-background">
         <Sidebar />
         <main className="lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-8">
-          <div className="max-w-2xl mx-auto">
-            <h1 className="text-2xl font-display font-bold mb-6">Select a Lesson</h1>
+          <div className="max-w-6xl mx-auto">
+            {/* Header with View Toggle */}
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-2xl font-display font-bold">Select a Lesson</h1>
+              
+              {/* View Mode Toggle */}
+              <div className="flex items-center gap-2 bg-card border border-border/50 rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="gap-2"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span className="hidden sm:inline">List</span>
+                </Button>
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className="gap-2"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                  <span className="hidden sm:inline">Grid</span>
+                </Button>
+                <Button
+                  variant={viewMode === 'week' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('week')}
+                  className="gap-2"
+                >
+                  <CalendarDays className="w-4 h-4" />
+                  <span className="hidden sm:inline">Week</span>
+                </Button>
+                <Button
+                  variant={viewMode === 'calendar' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('calendar')}
+                  className="gap-2"
+                >
+                  <Calendar className="w-4 h-4" />
+                  <span className="hidden sm:inline">Calendar</span>
+                </Button>
+              </div>
+            </div>
+
             {!lessons || lessons.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
@@ -226,33 +306,64 @@ const Practice = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-3">
-                {lessons.map((lesson) => (
-                  <motion.div
-                    key={lesson.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-4 rounded-xl bg-card border border-border/50 hover:border-primary/30 cursor-pointer transition-all"
-                    onClick={() => {
-                      setSelectedLesson(lesson);
-                      const cats = Object.keys(lesson.categories || {});
-                      if (cats.length > 0) setActiveCategory(cats[0]);
-                    }}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center text-lg font-bold text-primary-foreground">
-                        {lesson.order_index}
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{lesson.lesson_name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {Object.keys(lesson.categories || {}).length} categories
-                        </p>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+              <>
+                {/* List View (Original) */}
+                {viewMode === 'list' && (
+                  <div className="space-y-3">
+                    {lessons.map((lesson) => (
+                      <motion.div
+                        key={lesson.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-4 rounded-xl bg-card border border-border/50 hover:border-primary/30 cursor-pointer transition-all"
+                        onClick={() => handleSelectLesson(lesson)}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center text-lg font-bold text-primary-foreground">
+                            {lesson.order_index}
+                          </div>
+                          <div>
+                            <h3 className="font-medium">{lesson.lesson_name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {Object.keys(lesson.categories || {}).length} categories
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Grid View */}
+                {viewMode === 'grid' && (
+                  <LessonGridView
+                    lessons={lessons}
+                    lessonDeadlines={lessonDeadlines}
+                    getLessonProgress={getLessonProgress}
+                    onSelectLesson={handleSelectLesson}
+                  />
+                )}
+
+                {/* Week View */}
+                {viewMode === 'week' && (
+                  <LessonWeekView
+                    lessons={lessons}
+                    lessonDeadlines={lessonDeadlines}
+                    getLessonProgress={getLessonProgress}
+                    onSelectLesson={handleSelectLesson}
+                  />
+                )}
+
+                {/* Calendar View */}
+                {viewMode === 'calendar' && (
+                  <LessonCalendarView
+                    lessons={lessons}
+                    lessonDeadlines={lessonDeadlines}
+                    getLessonProgress={getLessonProgress}
+                    onSelectLesson={handleSelectLesson}
+                  />
+                )}
+              </>
             )}
           </div>
         </main>

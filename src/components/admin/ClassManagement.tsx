@@ -393,6 +393,9 @@ const ClassCard: React.FC<{
   const addUser = useAddUserToClass();
   const removeUser = useRemoveUserFromClass();
   
+  // Get learner count
+  const learnerCount = enrollments?.length || 0;
+  
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [userSearch, setUserSearch] = useState('');
@@ -435,28 +438,32 @@ const ClassCard: React.FC<{
       <Card className="group hover:border-primary/50 transition-colors">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center">
-                <Users className="w-5 h-5 text-accent" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">
-                    {cls.class_code}
-                  </span>
-                  {cls.courses && (
-                    <Badge variant="outline" className="text-xs">
-                      {cls.courses.code}
-                    </Badge>
-                  )}
-                  <Badge variant="secondary" className="text-xs gap-1">
-                    <Users className="w-3 h-3" />
-                    {enrollments?.length || 0}
-                  </Badge>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent/20 to-accent/5 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-accent" />
                 </div>
-                <CardTitle className="text-lg mt-1">{cls.class_name}</CardTitle>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-accent bg-accent/10 px-2 py-0.5 rounded">
+                      {cls.class_code}
+                    </span>
+                    {cls.courses && (
+                      <Badge variant="outline" className="text-xs">
+                        {cls.courses.code}
+                      </Badge>
+                    )}
+                    <Badge variant="secondary" className="text-xs gap-1">
+                      <Users className="w-3 h-3" />
+                      {enrollmentsLoading ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <>{learnerCount}</>
+                      )}
+                    </Badge>
+                  </div>
+                  <CardTitle className="text-lg mt-1">{cls.class_name}</CardTitle>
+                </div>
               </div>
-            </div>
             
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <Button 
@@ -516,7 +523,7 @@ const ClassCard: React.FC<{
               <Button variant="ghost" size="sm" className="w-full justify-between text-muted-foreground hover:text-foreground">
                 <span className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  {enrollments?.length || 0} Learners • {lessons?.length || 0} Lessons
+                  {learnerCount} Learners • {lessons?.length || 0} Lessons
                 </span>
                 {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </Button>
