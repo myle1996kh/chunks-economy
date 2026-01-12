@@ -70,14 +70,6 @@ export const PracticeModal = ({
   const currentItem = items[currentIndex];
   const progress = ((currentIndex + 1) / items.length) * 100;
 
-  // Metric labels for display
-  const metricLabels: Record<string, string> = {
-    volume: 'Volume',
-    speechRate: 'Speed',
-    pauses: 'Fluency',
-    latency: 'Response',
-    endIntensity: 'Energy'
-  };
 
   // Reset state when modal closes
   useEffect(() => {
@@ -198,13 +190,28 @@ export const PracticeModal = ({
       setShowEnglish(false);
       recorder.resetRecording();
     } else {
+      // Session complete - show summary with coins
       const avgScore = sessionStats.completed > 0 
         ? Math.round(sessionStats.totalScore / sessionStats.completed) 
         : 0;
       
-      toast.success("Practice session complete! 🎉", {
-        description: `Average: ${avgScore}% | Coins: ${sessionStats.coinsEarned >= 0 ? '+' : ''}${sessionStats.coinsEarned}`
-      });
+      const coinText = sessionStats.coinsEarned >= 0 
+        ? `+${sessionStats.coinsEarned} 🪙` 
+        : `${sessionStats.coinsEarned} 🪙`;
+      
+      toast.success(
+        <div className="flex flex-col gap-1">
+          <span className="font-semibold">Practice Complete! 🎉</span>
+          <div className="flex items-center gap-4 text-sm">
+            <span>📊 Avg: <strong>{avgScore}%</strong></span>
+            <span>✅ Items: <strong>{sessionStats.completed}</strong></span>
+            <span className={sessionStats.coinsEarned >= 0 ? "text-green-600" : "text-red-500"}>
+              {coinText}
+            </span>
+          </div>
+        </div>,
+        { duration: 5000 }
+      );
       onClose();
     }
   };
@@ -412,31 +419,62 @@ export const PracticeModal = ({
                   )}
                 </div>
 
-                {/* Metrics Breakdown */}
+                {/* Metrics Breakdown - Shows both score AND raw values */}
                 <div className="grid grid-cols-5 gap-2 mb-4">
-                {Object.entries(analysisResult.metrics).map(([key, value], index) => {
-                    const numValue = typeof value === 'number' ? value : 0;
-                    return (
-                      <motion.div 
-                        key={key} 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 * index }}
-                        className="text-center p-3 rounded-xl bg-secondary/50 border border-border/50"
-                      >
-                        <div className="text-xs text-muted-foreground mb-1">
-                          {metricLabels[key] || key}
-                        </div>
-                        <div className={`text-2xl font-bold ${
-                          numValue >= 80 ? "text-success" 
-                            : numValue >= 60 ? "text-warning" 
-                            : "text-destructive"
-                        }`}>
-                          {numValue}%
-                        </div>
-                      </motion.div>
-                    );
-                  })}
+                  {[
+                    { 
+                      key: 'volume', 
+                      label: 'Volume', 
+                      score: analysisResult.metrics.volume,
+                      raw: `${analysisResult.volume?.averageDb?.toFixed(1) || 0} dB`
+                    },
+                    { 
+                      key: 'speechRate', 
+                      label: 'Speed', 
+                      score: analysisResult.metrics.speechRate,
+                      raw: `${analysisResult.speechRate?.wordsPerMinute || 0} WPM`
+                    },
+                    { 
+                      key: 'pauses', 
+                      label: 'Fluency', 
+                      score: analysisResult.metrics.pauses,
+                      raw: `${analysisResult.pauseManagement?.pauseCount || 0} pauses`
+                    },
+                    { 
+                      key: 'latency', 
+                      label: 'Response', 
+                      score: analysisResult.metrics.latency,
+                      raw: `${analysisResult.responseTime?.responseTimeMs || 0} ms`
+                    },
+                    { 
+                      key: 'endIntensity', 
+                      label: 'Energy', 
+                      score: analysisResult.metrics.endIntensity,
+                      raw: analysisResult.acceleration?.isAccelerating ? '📈 Rising' : '📉 Flat'
+                    },
+                  ].map((metric, index) => (
+                    <motion.div 
+                      key={metric.key} 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 * index }}
+                      className="text-center p-3 rounded-xl bg-secondary/50 border border-border/50"
+                    >
+                      <div className="text-xs text-muted-foreground mb-1">
+                        {metric.label}
+                      </div>
+                      <div className={`text-2xl font-bold ${
+                        metric.score >= 80 ? "text-success" 
+                          : metric.score >= 60 ? "text-warning" 
+                          : "text-destructive"
+                      }`}>
+                        {metric.score}%
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-1 font-mono">
+                        {metric.raw}
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
 
                 {/* Feedback */}
