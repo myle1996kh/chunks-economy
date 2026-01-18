@@ -26,8 +26,18 @@ export const useLeaderboard = (limit = 50) => {
 
       if (error) throw error;
 
+      type ScoreLeaderboardRow = {
+        user_id: string;
+        display_name?: string | null;
+        avatar_url?: string | null;
+        total_score: number;
+        practice_count: number;
+        avg_score: number;
+        coins: number;
+      };
+
       // Map to our entry format
-      const entries: LeaderboardEntry[] = (data || []).map((row: any, index: number) => ({
+      const entries: LeaderboardEntry[] = (data || []).map((row: ScoreLeaderboardRow, index: number) => ({
         userId: row.user_id,
         displayName: row.display_name || 'Anonymous',
         avatarUrl: row.avatar_url,
@@ -59,7 +69,7 @@ export const useUserRank = (userId?: string) => {
 
       if (error) throw error;
 
-      const userIndex = (data || []).findIndex((row: any) => row.user_id === userId);
+      const userIndex = (data || []).findIndex((row: { user_id: string }) => row.user_id === userId);
       return userIndex >= 0 ? userIndex + 1 : null;
     },
     enabled: !!userId

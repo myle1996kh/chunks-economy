@@ -133,12 +133,21 @@ const Profile = () => {
     return transactions;
   }, [transactions, coinFilter]);
 
+  type HistoryWithLessonContent = {
+    category: string;
+    item_index: number;
+    lessons?: {
+      categories?: Record<string, Array<{ English?: string }>>;
+    };
+  };
+
   // Get English content from practice history item
-  const getEnglishContent = (history: any) => {
-    if (!history.lessons || !history.lessons.categories) return null;
-    const categoryItems = history.lessons.categories[history.category];
-    if (!categoryItems || !categoryItems[history.item_index]) return null;
-    return categoryItems[history.item_index].English;
+  const getEnglishContent = (history: HistoryWithLessonContent) => {
+    const categories = history.lessons?.categories;
+    if (!categories) return null;
+    const categoryItems = categories[history.category];
+    const item = categoryItems?.[history.item_index];
+    return item?.English ?? null;
   };
 
   const handleSaveProfile = async () => {
@@ -156,8 +165,9 @@ const Profile = () => {
       toast.success("Profile updated successfully");
       setIsEditing(false);
       refetchProfile();
-    } catch (error: any) {
-      toast.error(`Failed to update profile: ${error.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast.error(`Failed to update profile: ${message}`);
     } finally {
       setIsSaving(false);
     }

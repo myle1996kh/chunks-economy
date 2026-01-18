@@ -90,8 +90,8 @@ const Vocabulary = () => {
   }> = [];
 
   categories.forEach(category => {
-    const items = selectedLesson.categories?.[category] || [];
-    items.forEach((item: any, index: number) => {
+    const items = (selectedLesson.categories?.[category] || []) as Array<{ Vietnamese: string; English: string }>;
+    items.forEach((item, index: number) => {
       const progress = lessonProgress?.find(
         p => p.category === category && p.item_index === index
       );

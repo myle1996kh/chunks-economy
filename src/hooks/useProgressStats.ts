@@ -38,6 +38,19 @@ export interface ClassProgress {
 // Keep CourseProgress as alias for backward compatibility
 export type CourseProgress = ClassProgress;
 
+type CourseLessonRow = {
+  id: string;
+  lesson_name: string;
+  order_index?: number | null;
+  categories?: Record<string, unknown> | null;
+};
+
+type EnrollmentRow = {
+  class_id: string | null;
+  course_classes?: { id: string; class_name: string; class_code?: string | null } | null;
+  course?: { id: string; name: string; lessons?: CourseLessonRow[] | null } | null;
+};
+
 export const useProgressStats = () => {
   const { user } = useAuth();
 
@@ -84,7 +97,7 @@ export const useProgressStats = () => {
       // Calculate class progress (based on enrollments)
       const classProgressList: ClassProgress[] = [];
 
-      enrollments?.forEach((enrollment: any) => {
+      (enrollments as EnrollmentRow[] | null)?.forEach((enrollment) => {
         const course = enrollment.course;
         const classInfo = enrollment.course_classes;
         if (!course) return;
@@ -98,11 +111,11 @@ export const useProgressStats = () => {
 
         // Sort lessons by order_index
         const sortedLessons = [...(course.lessons || [])].sort(
-          (a: any, b: any) => a.order_index - b.order_index
+          (a, b) => (a.order_index ?? 0) - (b.order_index ?? 0)
         );
 
-        sortedLessons.forEach((lesson: any) => {
-          const categories = lesson.categories || {};
+        sortedLessons.forEach((lesson) => {
+          const categories = (lesson.categories || {}) as Record<string, unknown>;
           const categoryProgressList: CategoryProgress[] = [];
           let lessonTotalItems = 0;
           let lessonPracticedItems = 0;
@@ -111,7 +124,7 @@ export const useProgressStats = () => {
           let lessonScoreCount = 0;
 
           // Process each category in the lesson
-          Object.entries(categories).forEach(([categoryName, items]: [string, any]) => {
+          Object.entries(categories).forEach(([categoryName, items]) => {
             const itemCount = Array.isArray(items) ? items.length : 0;
             const key = `${lesson.id}-${categoryName}`;
             const categoryProgress = progressMap.get(key) || [];

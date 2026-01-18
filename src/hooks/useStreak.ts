@@ -143,7 +143,15 @@ export const useStreakLeaderboard = (limit = 10) => {
 
       if (error) throw error;
 
-      return (data || []).map((row: any, index: number) => ({
+      type StreakLeaderboardRow = {
+        user_id: string;
+        display_name?: string | null;
+        avatar_url?: string | null;
+        current_streak: number;
+        longest_streak: number;
+      };
+
+      return (data || []).map((row: StreakLeaderboardRow, index: number) => ({
         rank: index + 1,
         userId: row.user_id,
         displayName: row.display_name || 'Anonymous',

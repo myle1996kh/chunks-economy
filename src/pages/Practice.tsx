@@ -103,7 +103,7 @@ const Practice = () => {
     let completed = 0;
     let coinsEarned = 0;
     
-    categoryItems.forEach((item: any, index: number) => {
+    categoryItems.forEach((_, index: number) => {
       const progress = lessonProgress.find(
         p => p.category === category && p.item_index === index
       );
@@ -171,9 +171,11 @@ const Practice = () => {
     ? Object.keys(selectedLesson.categories)
     : [];
 
+  type PracticeItem = { English: string; [key: string]: unknown };
+
   // Get practice items for active category
-  const practiceItems = selectedLesson?.categories?.[activeCategory] || [];
-  const practiceItemsWithMastery = practiceItems.map((item: any, index: number) => {
+  const practiceItems = (selectedLesson?.categories?.[activeCategory] || []) as PracticeItem[];
+  const practiceItemsWithMastery = practiceItems.map((item: PracticeItem, index: number) => {
     const progress = lessonProgress?.find(
       p => p.category === activeCategory && p.item_index === index
     );
@@ -225,7 +227,7 @@ const Practice = () => {
       const result = await analyzeAudioAsync(
         audioData.audioBuffer,
         audioData.sampleRate,
-        audioData.audioBase64 || undefined
+        { audioBlob: audioData.audioBlob ?? undefined, audioBase64: audioData.audioBase64 ?? undefined }
       );
 
       setAnalysisResult(result);
@@ -233,7 +235,7 @@ const Practice = () => {
       // Calculate base coin reward/penalty
       const score = result.overallScore;
       let coins = 0;
-      let bonusMessages: string[] = [];
+      const bonusMessages: string[] = [];
       
       if (coinConfig) {
         if (score >= (coinConfig.reward_score_threshold || 70)) {
@@ -358,9 +360,9 @@ const Practice = () => {
         setBonusMessage(bonusMessages.join('\n'));
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error analyzing speech:", error);
-      toast.error(error.message || "Failed to analyze speech");
+      toast.error(error instanceof Error ? error.message : "Failed to analyze speech");
     } finally {
       setIsAnalyzing(false);
     }
@@ -969,7 +971,7 @@ const Practice = () => {
 
           {/* Item indicators */}
           <div className="flex justify-center gap-1.5 mt-6">
-            {practiceItemsWithMastery.slice(0, 10).map((item: any, i: number) => (
+            {practiceItemsWithMastery.slice(0, 10).map((item: PracticeItem, i: number) => (
               <button
                 key={i}
                 onClick={() => {

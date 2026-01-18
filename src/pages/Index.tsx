@@ -161,7 +161,7 @@ const Index = () => {
                       </h2>
                       <p className="text-muted-foreground text-sm">
                         {Object.keys(nextLesson.categories || {}).length} categories • 
-                        {Object.values(nextLesson.categories || {}).reduce((sum: number, items: any) => sum + items.length, 0)} items
+                        {Object.values(nextLesson.categories || {}).reduce((sum: number, items) => sum + (Array.isArray(items) ? items.length : 0), 0)} items
                       </p>
                     </div>
                     

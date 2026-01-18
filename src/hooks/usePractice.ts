@@ -17,7 +17,7 @@ export interface PracticeHistory {
   practiced_at: string;
   lessons?: {
     lesson_name: string;
-    categories: Record<string, any[]>;
+    categories: Record<string, unknown[]>;
   };
 }
 
@@ -182,19 +182,46 @@ export const useUserStats = () => {
 // Transcribe audio using Deepgram
 export const useTranscribe = () => {
   return useMutation({
-    mutationFn: async (audioBase64: string) => {
-      const { data, error } = await supabase.functions.invoke('deepgram-transcribe', {
-        body: { audio: audioBase64 }
+    mutationFn: async (params: { audioBlob?: Blob; audioBase64?: string; mimeType?: string }) => {
+      if (!params.audioBlob && !params.audioBase64) {
+        throw new Error("No audio provided");
+      }
+
+      // Prefer multipart (Blob/File) to avoid base64 bloat.
+      if (params.audioBlob) {
+        const formData = new FormData();
+        formData.append("audio", params.audioBlob, "recording.webm");
+
+        const { data, error } = await supabase.functions.invoke("deepgram-transcribe", {
+          body: formData,
+        });
+
+        if (error) throw error;
+        return data as {
+          transcript: string;
+          confidence: number;
+          duration: number;
+          words: unknown[];
+          wordCount: number;
+          wordsPerMinute: number;
+        };
+      }
+
+      // Fallback: JSON base64
+      const { data, error } = await supabase.functions.invoke("deepgram-transcribe", {
+        body: { audio: params.audioBase64, mimeType: params.mimeType },
       });
 
       if (error) throw error;
       return data as {
-        wordCount: number;
-        duration: number;
         transcript: string;
+        confidence: number;
+        duration: number;
+        words: unknown[];
+        wordCount: number;
         wordsPerMinute: number;
       };
-    }
+    },
   });
 };
 

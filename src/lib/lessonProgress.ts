@@ -27,8 +27,8 @@ export function calculateLessonProgress(
   let totalItems = 0;
   const categories = lesson.categories || {};
   
-  Object.values(categories).forEach((items: any[]) => {
-    totalItems += items.length;
+  Object.values(categories).forEach((items) => {
+    totalItems += Array.isArray(items) ? items.length : 0;
   });
 
   // Count completed items (mastery level >= 3)
@@ -127,8 +127,8 @@ export function getLessonItemCount(lesson: Lesson): number {
   let count = 0;
   const categories = lesson.categories || {};
   
-  Object.values(categories).forEach((items: any[]) => {
-    count += items.length;
+  Object.values(categories).forEach((items) => {
+    count += Array.isArray(items) ? items.length : 0;
   });
   
   return count;

@@ -112,7 +112,7 @@ const CourseManagement: React.FC = () => {
     setFormData(emptyForm);
   };
 
-  const openEditDialog = (course: any) => {
+  const openEditDialog = (course: { id: string; code: string; name: string; description?: string | null; start_date?: string | null; schedule_days?: string[] | null; is_active: boolean }) => {
     setFormData({
       code: course.code,
       name: course.name,

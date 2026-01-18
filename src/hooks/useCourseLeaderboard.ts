@@ -29,8 +29,17 @@ export const useCourseLeaderboard = (courseId?: string, limit: number = 50) => {
 
       if (error) throw error;
 
+      type ScoreLeaderboardRow = {
+        user_id: string;
+        display_name?: string | null;
+        avatar_url?: string | null;
+        total_score: number;
+        practice_count: number;
+        avg_score: number;
+      };
+
       // Map to our entry format
-      const entries: CourseLeaderboardEntry[] = (data || []).map((row: any, index: number) => ({
+      const entries: CourseLeaderboardEntry[] = (data || []).map((row: ScoreLeaderboardRow, index: number) => ({
         userId: row.user_id,
         displayName: row.display_name || 'Anonymous',
         avatarUrl: row.avatar_url,
@@ -96,8 +105,17 @@ export const useClassLeaderboard = (classId?: string | null, limit: number = 50)
 
       if (error) throw error;
 
+      type ScoreLeaderboardRow = {
+        user_id: string;
+        display_name?: string | null;
+        avatar_url?: string | null;
+        total_score: number;
+        practice_count: number;
+        avg_score: number;
+      };
+
       // Map to our entry format - includes ALL enrolled users even with 0 practice
-      const entries: CourseLeaderboardEntry[] = (data || []).map((row: any, index: number) => ({
+      const entries: CourseLeaderboardEntry[] = (data || []).map((row: ScoreLeaderboardRow, index: number) => ({
         userId: row.user_id,
         displayName: row.display_name || 'Anonymous',
         avatarUrl: row.avatar_url,

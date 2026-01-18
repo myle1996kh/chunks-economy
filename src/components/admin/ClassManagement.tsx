@@ -91,6 +91,27 @@ const emptyForm: ClassFormData = {
   is_active: true
 };
 
+type CourseClassRow = {
+  id: string;
+  course_id: string;
+  class_name: string;
+  class_code: string;
+  start_date: string;
+  schedule_days?: string[] | null;
+  is_active: boolean;
+  learner_count?: number | null;
+};
+
+type EnrollmentRow = {
+  id: string;
+  profiles?: {
+    id: string;
+    email: string;
+    display_name?: string | null;
+    avatar_url?: string | null;
+  } | null;
+};
+
 const ClassManagement: React.FC = () => {
   const { data: courseClasses, isLoading } = useAllCourseClasses();
   const { data: courses } = useCourses();
@@ -131,7 +152,7 @@ const ClassManagement: React.FC = () => {
     setFormData(emptyForm);
   };
 
-  const openEditDialog = (cls: any) => {
+  const openEditDialog = (cls: CourseClassRow) => {
     setFormData({
       course_id: cls.course_id,
       class_name: cls.class_name,
@@ -380,7 +401,7 @@ const ClassManagement: React.FC = () => {
 
 // Separate component for class card with learner management
 const ClassCard: React.FC<{
-  cls: any;
+  cls: CourseClassRow;
   index: number;
   isExpanded: boolean;
   onToggleExpand: () => void;
@@ -410,7 +431,7 @@ const ClassCard: React.FC<{
     : [];
 
   // Filter users not already enrolled
-  const enrolledUserIds = new Set(enrollments?.map(e => (e.profiles as any)?.id) || []);
+  const enrolledUserIds = new Set(enrollments?.map(e => (e.profiles as { id?: string } | null)?.id).filter(Boolean) as string[] || []);
   const availableUsers = allUsers?.filter(u => !enrolledUserIds.has(u.id)) || [];
   const filteredUsers = availableUsers.filter(u => 
     u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
@@ -454,7 +475,7 @@ const ClassCard: React.FC<{
                     )}
                     <Badge variant="secondary" className="text-xs gap-1">
                       <Users className="w-3 h-3" />
-                      {(cls as any).learner_count ?? learnerCount}
+                      {cls.learner_count ?? learnerCount}
                     </Badge>
                   </div>
                   <CardTitle className="text-lg mt-1">{cls.class_name}</CardTitle>
@@ -519,7 +540,7 @@ const ClassCard: React.FC<{
               <Button variant="ghost" size="sm" className="w-full justify-between text-muted-foreground hover:text-foreground">
                 <span className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  {((cls as any).learner_count ?? learnerCount)} Learners • {lessons?.length || 0} Lessons
+                  {(cls.learner_count ?? learnerCount)} Learners • {lessons?.length || 0} Lessons
                 </span>
                 {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </Button>
@@ -623,7 +644,7 @@ const ClassCard: React.FC<{
                     </p>
                   ) : (
                     <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {enrollments.map((enrollment: any) => (
+                      {(enrollments as EnrollmentRow[]).map((enrollment) => (
                         <div 
                           key={enrollment.id}
                           className="flex items-center justify-between p-2 rounded-lg bg-secondary/30"

@@ -46,7 +46,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const onStopPromiseRef = useRef<{
     resolve: (value: { audioBuffer: Float32Array; sampleRate: number; audioBase64: string | null; audioUrl: string | null }) => void;
-    reject: (reason?: any) => void;
+    reject: (reason?: unknown) => void;
   } | null>(null);
 
   const updateAudioLevel = useCallback(() => {

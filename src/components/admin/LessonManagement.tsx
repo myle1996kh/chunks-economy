@@ -224,7 +224,7 @@ const LessonManagement: React.FC = () => {
                     <div className="flex flex-wrap gap-2">
                       {Object.entries(newLesson.categories).map(([cat, items]) => (
                         <span key={cat} className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                          {cat}: {(items as any[]).length} items
+                          {cat}: {(Array.isArray(items) ? items.length : 0)} items
                         </span>
                       ))}
                     </div>
@@ -276,7 +276,7 @@ const LessonManagement: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                          {(lesson as any).courses?.code || 'No course'}
+                          {(lesson as { courses?: { code?: string } | null }).courses?.code || 'No course'}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           #{lesson.order_index}
@@ -286,7 +286,7 @@ const LessonManagement: React.FC = () => {
                       <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                         {Object.entries(lesson.categories || {}).map(([cat, items]) => (
                           <span key={cat}>
-                            {cat}: {(items as any[]).length}
+                            {cat}: {(Array.isArray(items) ? items.length : 0)}
                           </span>
                         ))}
                       </div>

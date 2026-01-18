@@ -100,7 +100,7 @@ function loadSavedConfig(): MetricConfig[] {
     if (saved) {
       const savedConfigs = JSON.parse(saved);
       return defaultMetrics.map((defaultMetric) => {
-        const savedMetric = savedConfigs.find((s: any) => s.id === defaultMetric.id);
+        const savedMetric = savedConfigs.find((s: { id: string }) => s.id === defaultMetric.id);
         if (savedMetric) {
           return {
             ...defaultMetric,

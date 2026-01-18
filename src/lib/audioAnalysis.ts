@@ -369,17 +369,45 @@ export function calculateSpeechRateWithZCR(
 }
 
 // Speech Rate via Deepgram STT
-export async function calculateSpeechRateWithSTT(audioBase64: string, duration: number): Promise<SpeechRateResult> {
+export async function calculateSpeechRateWithSTT(
+  params: { audioBlob?: Blob; audioBase64?: string; mimeType?: string },
+  duration: number,
+): Promise<SpeechRateResult> {
   const config = getMetricConfig("speechRate");
   const MIN_WPM = config?.thresholds.min ?? 80;
   const IDEAL_WPM = config?.thresholds.ideal ?? 160;
 
   try {
-    const { data, error } = await supabase.functions.invoke("deepgram-transcribe", {
-      body: { audio: audioBase64 },
-    });
+    if (!params.audioBlob && !params.audioBase64) {
+      throw new Error("No audio provided");
+    }
 
-    if (error) throw error;
+    type DeepgramTranscribeResult = {
+      transcript?: string;
+      wordsPerMinute?: number;
+    };
+
+    let data: DeepgramTranscribeResult;
+
+    // Prefer multipart (Blob/File) to avoid base64 bloat.
+    if (params.audioBlob) {
+      const formData = new FormData();
+      formData.append("audio", params.audioBlob, "recording.webm");
+
+      const result = await supabase.functions.invoke("deepgram-transcribe", {
+        body: formData,
+      });
+
+      if (result.error) throw result.error;
+      data = (result.data ?? {}) as DeepgramTranscribeResult;
+    } else {
+      const result = await supabase.functions.invoke("deepgram-transcribe", {
+        body: { audio: params.audioBase64, mimeType: params.mimeType },
+      });
+
+      if (result.error) throw result.error;
+      data = (result.data ?? {}) as DeepgramTranscribeResult;
+    }
 
     const wordsPerMinute = data.wordsPerMinute || 0;
     const transcript = data.transcript || "";
@@ -756,7 +784,7 @@ export function analyzeAudio(audioBuffer: Float32Array, sampleRate: number): Ana
 export async function analyzeAudioAsync(
   audioBuffer: Float32Array,
   sampleRate: number,
-  audioBase64?: string,
+  audio?: { audioBlob?: Blob; audioBase64?: string; mimeType?: string },
 ): Promise<AnalysisResult> {
   const duration = audioBuffer.length / sampleRate;
   
@@ -769,8 +797,8 @@ export async function analyzeAudioAsync(
   const volume = calculateVolumeLevel(audioBuffer);
 
   let speechRate: SpeechRateResult;
-  if (method === "deepgram-stt" && audioBase64) {
-    speechRate = await calculateSpeechRateWithSTT(audioBase64, duration);
+  if (method === "deepgram-stt" && (audio?.audioBlob || audio?.audioBase64)) {
+    speechRate = await calculateSpeechRateWithSTT(audio, duration);
   } else if (method === "zero-crossing-rate") {
     speechRate = calculateSpeechRateWithZCR(audioBuffer, sampleRate, duration);
   } else {

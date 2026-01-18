@@ -127,7 +127,7 @@ export const PracticeModal = ({
       const result = await analyzeAudioAsync(
         audioData.audioBuffer,
         audioData.sampleRate,
-        audioData.audioBase64 || undefined
+        { audioBlob: audioData.audioBlob ?? undefined, audioBase64: audioData.audioBase64 ?? undefined }
       );
       
       console.log('✅ Analysis complete:', result);
@@ -166,9 +166,11 @@ export const PracticeModal = ({
       // Refetch wallet to show updated balance
       refetchWallet();
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error analyzing speech:", error);
-      const errorMessage = error.message || "Failed to analyze speech. Please try recording again.";
+      const errorMessage = error instanceof Error
+        ? error.message
+        : "Failed to analyze speech. Please try recording again.";
       toast.error(errorMessage, {
         description: "Make sure you spoke clearly and your microphone is working."
       });

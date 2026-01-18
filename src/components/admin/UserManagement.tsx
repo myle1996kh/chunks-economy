@@ -44,7 +44,7 @@ const UserManagement: React.FC = () => {
   const queryClient = useQueryClient();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<{ id: string; email: string; display_name?: string | null } | null>(null);
   const [coinAmount, setCoinAmount] = useState('');
   const [coinDescription, setCoinDescription] = useState('');
   const [isCoinsDialogOpen, setIsCoinsDialogOpen] = useState(false);
@@ -113,12 +113,13 @@ const UserManagement: React.FC = () => {
         queryClient.invalidateQueries({ queryKey: ['all-users'] });
         refetch();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating user:', error);
-      if (error.message?.includes('already registered')) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      if (message.includes('already registered')) {
         toast.error('This email is already registered');
       } else {
-        toast.error(`Failed to create user: ${error.message}`);
+        toast.error(`Failed to create user: ${message}`);
       }
     } finally {
       setIsCreatingUser(false);
@@ -160,8 +161,9 @@ const UserManagement: React.FC = () => {
       
       queryClient.invalidateQueries({ queryKey: ['all-users'] });
       toast.success('Role updated successfully');
-    } catch (error: any) {
-      toast.error(`Failed to update role: ${error.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast.error(`Failed to update role: ${message}`);
     }
   };
 
@@ -270,7 +272,7 @@ const UserManagement: React.FC = () => {
                 
                 <div className="space-y-2">
                   <Label>Role</Label>
-                  <Select value={newUserRole} onValueChange={(v: any) => setNewUserRole(v)}>
+                  <Select value={newUserRole} onValueChange={(v: 'user' | 'teacher' | 'admin') => setNewUserRole(v)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

@@ -370,7 +370,7 @@ const Progress = () => {
                 <CardContent>
                   {userStats?.recentHistory && userStats.recentHistory.length > 0 ? (
                     <div className="space-y-2">
-                      {userStats.recentHistory.slice(0, 5).map((history: any, i: number) => (
+                      {userStats.recentHistory.slice(0, 5).map((history: { category: string; practiced_at: string; score: number; coins_earned: number }, i: number) => (
                         <div 
                           key={i} 
                           className="flex items-center justify-between py-2 border-b border-border/30 last:border-0"

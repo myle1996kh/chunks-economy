@@ -41,9 +41,9 @@ const Leaderboard = () => {
 
   // Get context label
   const contextLabel = classId && enrollment?.course_classes 
-    ? (enrollment.course_classes as any)?.class_name || 'Your Class'
+    ? (enrollment.course_classes as { class_name?: string } | null)?.class_name || 'Your Class'
     : courseId && enrollment?.courses 
-      ? (enrollment.courses as any)?.name || 'Your Course'
+      ? (enrollment.courses as { name?: string } | null)?.name || 'Your Course'
       : 'Global';
 
   // Highlight users who just updated
@@ -214,7 +214,7 @@ const Leaderboard = () => {
                                 {getRankIcon(entry.rank)}
                                 {'rankChange' in entry && entry.rankChange && entry.rankChange !== 'same' && (
                                   <div className="absolute -top-1 -right-1">
-                                    {getRankChangeIndicator(entry.rankChange as any)}
+                                    {getRankChangeIndicator(entry.rankChange as ('up' | 'down' | 'same' | 'new' | undefined))}
                                   </div>
                                 )}
                               </div>

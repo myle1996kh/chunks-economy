@@ -37,7 +37,17 @@ export const useRealtimeLeaderboard = (limit = 50) => {
       if (error) throw error;
 
       // Map to our entry format with rank tracking
-      const entries: RealtimeLeaderboardEntry[] = (data || []).map((row: any, index: number) => {
+      type ScoreLeaderboardRow = {
+        user_id: string;
+        display_name?: string | null;
+        avatar_url?: string | null;
+        total_score: number;
+        practice_count: number;
+        avg_score: number;
+        coins: number;
+      };
+
+      const entries: RealtimeLeaderboardEntry[] = (data || []).map((row: ScoreLeaderboardRow, index: number) => {
         const previousInfo = rankChanges.get(row.user_id);
         const rank = index + 1;
         
@@ -148,7 +158,7 @@ export const useRealtimeUserRank = () => {
       p_class_id: null
     });
 
-    const userRankInfo = (data || []).findIndex((row: any) => row.user_id === user.id);
+    const userRankInfo = (data || []).findIndex((row: { user_id: string }) => row.user_id === user.id);
     
     if (userRankInfo !== -1) {
       setPreviousRank(rank);
