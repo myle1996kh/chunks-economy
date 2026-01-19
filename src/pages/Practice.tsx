@@ -32,7 +32,7 @@ import { LessonWeekView } from "@/components/practice/LessonWeekView";
 import { useEnrollments, useCourseLessons, Lesson } from "@/hooks/useCourses";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
-import { useSavePractice, useUserProgress } from "@/hooks/usePractice";
+import { usePracticeIngest, useSavePractice, useUserProgress } from "@/hooks/usePractice";
 import { analyzeAudioAsync, AnalysisResult } from "@/lib/audioAnalysis";
 import { useCoinConfig } from "@/hooks/useCoinWallet";
 import { useWallet } from "@/hooks/useUserData";
@@ -76,6 +76,7 @@ const Practice = () => {
   const recorder = useAudioRecorder();
   const tts = useTextToSpeech();
   const savePractice = useSavePractice();
+  const practiceIngest = usePracticeIngest();
 
   const { data: lessonProgress } = useUserProgress(selectedLesson?.id);
 
@@ -253,7 +254,30 @@ const Practice = () => {
         coins = score >= 70 ? Math.floor(score / 10) : (score < 50 ? -5 : 0);
       }
 
-      // Save practice first to update progress
+      // Save normalized backend records (take/transcript/score)
+      if (audioData.audioBlob) {
+        try {
+          await practiceIngest.mutateAsync({
+            audioBlob: audioData.audioBlob,
+            lessonId: selectedLesson.id,
+            category: activeCategory,
+            itemIndex: currentItemIndex,
+            metrics: {
+              volume: result.volume.averageDb,
+              speechRate: result.speechRate.wordsPerMinute,
+              pauseCount: result.pauseManagement.pauseCount,
+              longestPause: Math.round(result.pauseManagement.maxPauseDuration * 1000),
+              latency: result.responseTime.responseTimeMs,
+              endIntensity: result.acceleration.score,
+            },
+            scoreOnServer: true,
+          });
+        } catch (e) {
+          console.warn('practice-ingest failed, continuing with local save:', e);
+        }
+      }
+
+      // Save legacy practice history (coins/progress)
       await savePractice.mutateAsync({
         lessonId: selectedLesson.id,
         category: activeCategory,

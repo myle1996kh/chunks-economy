@@ -24,6 +24,7 @@ import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { useCoinConfig } from "@/hooks/useCoinWallet";
 import { useWallet } from "@/hooks/useUserData";
+import { usePracticeIngest } from "@/hooks/usePractice";
 import { analyzeAudioAsync, AnalysisResult } from "@/lib/audioAnalysis";
 import { toast } from "sonner";
 
@@ -67,6 +68,7 @@ export const PracticeModal = ({
   const tts = useTextToSpeech();
   const { data: coinConfig } = useCoinConfig();
   const { data: wallet, refetch: refetchWallet } = useWallet();
+  const practiceIngest = usePracticeIngest();
 
   const currentItem = items[currentIndex];
   const progress = ((currentIndex + 1) / items.length) * 100;
@@ -134,8 +136,31 @@ export const PracticeModal = ({
 
       setAnalysisResult(result);
 
+      // Persist normalized backend records (take/transcript/score)
+      if (audioData.audioBlob) {
+        try {
+          await practiceIngest.mutateAsync({
+            audioBlob: audioData.audioBlob,
+            lessonId,
+            category,
+            itemIndex: currentIndex,
+            metrics: {
+              volume: result.volume.averageDb,
+              speechRate: result.speechRate.wordsPerMinute,
+              pauseCount: result.pauseManagement.pauseCount,
+              longestPause: Math.round(result.pauseManagement.maxPauseDuration * 1000),
+              latency: result.responseTime.responseTimeMs,
+              endIntensity: result.acceleration.score,
+            },
+            scoreOnServer: true,
+          });
+        } catch (e) {
+          console.warn('practice-ingest failed:', e);
+        }
+      }
+
       // Calculate coin reward/penalty
-      const score = analysisResult.overallScore;
+      const score = result.overallScore;
       let coins = 0;
       
       if (coinConfig) {

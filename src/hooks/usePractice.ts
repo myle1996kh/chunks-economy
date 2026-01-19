@@ -54,6 +54,28 @@ export interface SpeechAnalysisResult {
   feedback: string[];
 }
 
+export interface PracticeIngestMetrics {
+  volume: number;
+  speechRate: number;
+  pauseCount: number;
+  longestPause: number;
+  latency: number;
+  endIntensity: number;
+}
+
+export interface PracticeIngestResult {
+  takeId: string;
+  transcript: {
+    transcript: string;
+    confidence: number;
+    duration: number;
+    wordCount: number;
+    wordsPerMinute: number;
+    words: unknown[];
+  };
+  analyze: SpeechAnalysisResult | null;
+}
+
 // Fetch user's practice history with lesson details
 export const usePracticeHistory = (lessonId?: string) => {
   const { user } = useAuth();
@@ -230,14 +252,7 @@ export const useAnalyzeSpeech = () => {
   return useMutation({
     mutationFn: async (params: {
       transcription: string;
-      metrics: {
-        volume: number;
-        speechRate: number;
-        pauseCount: number;
-        longestPause: number;
-        latency: number;
-        endIntensity: number;
-      };
+      metrics: PracticeIngestMetrics;
     }) => {
       const { data, error } = await supabase.functions.invoke('analyze-speech', {
         body: params
@@ -245,6 +260,35 @@ export const useAnalyzeSpeech = () => {
 
       if (error) throw error;
       return data as SpeechAnalysisResult;
+    }
+  });
+};
+
+// Ingest a practice take (creates take + transcript + optional score)
+export const usePracticeIngest = () => {
+  return useMutation({
+    mutationFn: async (params: {
+      audioBlob: Blob;
+      lessonId?: string;
+      category?: string;
+      itemIndex?: number;
+      metrics?: PracticeIngestMetrics;
+      scoreOnServer?: boolean;
+    }) => {
+      const formData = new FormData();
+      formData.append('audio', params.audioBlob, 'recording.webm');
+      if (params.lessonId) formData.append('lessonId', params.lessonId);
+      if (params.category) formData.append('category', params.category);
+      if (typeof params.itemIndex === 'number') formData.append('itemIndex', String(params.itemIndex));
+      if (params.metrics) formData.append('metrics', JSON.stringify(params.metrics));
+      if (typeof params.scoreOnServer === 'boolean') formData.append('scoreOnServer', String(params.scoreOnServer));
+
+      const { data, error } = await supabase.functions.invoke('practice-ingest', {
+        body: formData,
+      });
+
+      if (error) throw error;
+      return data as PracticeIngestResult;
     }
   });
 };
