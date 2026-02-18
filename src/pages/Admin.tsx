@@ -20,6 +20,7 @@ import LessonManagement from '@/components/admin/LessonManagement';
 import UserManagement from '@/components/admin/UserManagement';
 import CoinConfigPanel from '@/components/admin/CoinConfigPanel';
 import ScoreWeightSettings from '@/pages/ScoreWeightSettings';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 const Admin: React.FC = () => {
   const { isAdmin, isLoading } = useAuth();
@@ -53,6 +54,7 @@ const Admin: React.FC = () => {
               <p className="text-sm text-muted-foreground">Manage courses, lessons, users & scoring</p>
             </div>
           </div>
+          <ThemeToggle />
         </div>
       </header>
 

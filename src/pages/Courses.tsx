@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { BookOpen, Loader2, CheckCircle2, ArrowRight, Mic, Calendar, Clock, Users } from "lucide-react";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { LearnerLayout } from "@/components/layout/LearnerLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -51,10 +51,7 @@ const Courses = () => {
   const hasEnrollments = enrollments && enrollments.length > 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      
-      <main className="lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-8">
+    <LearnerLayout contentClassName="max-w-5xl">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <motion.div
@@ -277,8 +274,7 @@ const Courses = () => {
             </div>
           )}
         </div>
-      </main>
-    </div>
+    </LearnerLayout>
   );
 };
 

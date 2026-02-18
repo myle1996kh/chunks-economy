@@ -15,7 +15,7 @@ import {
   Layers,
   Users
 } from "lucide-react";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { LearnerLayout } from "@/components/layout/LearnerLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress as ProgressBar } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -80,11 +80,7 @@ const Progress = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      
-      <main className="lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-8">
-        <div className="max-w-4xl mx-auto">
+    <LearnerLayout contentClassName="max-w-4xl">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -468,8 +464,7 @@ const Progress = () => {
             </motion.div>
           </div>
         </div>
-      </main>
-    </div>
+    </LearnerLayout>
   );
 };
 

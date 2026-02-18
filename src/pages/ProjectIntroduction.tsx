@@ -6,14 +6,11 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Info, Coins, Target, Users, LayoutDashboard, Database, Trophy, Award, Clock, Code2, Cpu, Layers, Zap } from "lucide-react";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { LearnerLayout } from "@/components/layout/LearnerLayout";
 
 const ProjectIntroduction = () => {
     return (
-        <div className="min-h-screen bg-background">
-            <Sidebar />
-            <main className="lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-8">
-                <div className="max-w-4xl mx-auto space-y-8">
+        <LearnerLayout contentClassName="max-w-4xl">
 
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
@@ -509,8 +506,7 @@ const ProjectIntroduction = () => {
                         </Accordion>
                     </motion.div>
                 </div>
-            </main>
-        </div>
+        </LearnerLayout>
     );
 };
 

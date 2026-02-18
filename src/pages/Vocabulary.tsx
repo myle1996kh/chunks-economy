@@ -15,7 +15,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { LearnerLayout } from "@/components/layout/LearnerLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -58,10 +58,8 @@ const Vocabulary = () => {
 
   if (!selectedLesson) {
     return (
-      <div className="min-h-screen bg-background">
-        <Sidebar />
-        <main className="lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-8">
-          <div className="max-w-4xl mx-auto text-center py-12">
+      <LearnerLayout contentClassName="max-w-4xl">
+        <div className="text-center py-12">
             <BookOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
             <h2 className="text-2xl font-bold mb-2">No Lesson Selected</h2>
             <p className="text-muted-foreground mb-6">
@@ -70,9 +68,8 @@ const Vocabulary = () => {
             <Link to="/practice">
               <Button>Go to Practice</Button>
             </Link>
-          </div>
-        </main>
-      </div>
+        </div>
+      </LearnerLayout>
     );
   }
 
@@ -160,11 +157,7 @@ const Vocabulary = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      
-      <main className="lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-8">
-        <div className="max-w-6xl mx-auto">
+    <LearnerLayout contentClassName="max-w-6xl">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -558,8 +551,7 @@ const Vocabulary = () => {
             </div>
           )}
         </div>
-      </main>
-    </div>
+    </LearnerLayout>
   );
 };
 

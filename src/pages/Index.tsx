@@ -12,7 +12,7 @@ import {
   AlertCircle,
   Users
 } from "lucide-react";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { LearnerLayout } from "@/components/layout/LearnerLayout";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -74,11 +74,7 @@ const Index = () => {
   const hasEnrollments = enrollments && enrollments.length > 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-
-      <main className="lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-8">
-        <div className="max-w-3xl mx-auto">
+    <LearnerLayout contentClassName="max-w-3xl">
           {/* Compact Header with Stats */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -310,8 +306,7 @@ const Index = () => {
             </motion.section>
           )}
         </div>
-      </main>
-    </div>
+    </LearnerLayout>
   );
 };
 

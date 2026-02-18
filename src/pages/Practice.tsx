@@ -19,7 +19,7 @@ import {
   CalendarDays,
   Coins
 } from "lucide-react";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { LearnerLayout } from "@/components/layout/LearnerLayout";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
@@ -438,10 +438,7 @@ const Practice = () => {
     };
 
     return (
-      <div className="min-h-screen bg-background">
-        <Sidebar />
-        <main className="lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-8">
-          <div className="max-w-6xl mx-auto">
+      <LearnerLayout contentClassName="max-w-6xl">
             {/* Header with View Toggle */}
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-2xl font-display font-bold">Select a Lesson</h1>
@@ -558,17 +555,12 @@ const Practice = () => {
               </>
             )}
           </div>
-        </main>
-      </div>
+      </LearnerLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      
-      <main className="lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-8">
-        <div className="max-w-2xl mx-auto">
+    <LearnerLayout contentClassName="max-w-2xl">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -1020,8 +1012,7 @@ const Practice = () => {
             )}
           </div>
         </div>
-      </main>
-    </div>
+    </LearnerLayout>
   );
 };
 

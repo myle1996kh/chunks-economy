@@ -22,6 +22,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useWallet } from "@/hooks/useUserData";
 import { useStreak } from "@/hooks/useStreak";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import logo from "@/assets/logo.png";
 
 const menuItems = [
@@ -140,55 +141,63 @@ export const Sidebar = () => {
         {/* Admin Link */}
         {isAdmin && (
           <Link to="/admin" onClick={() => setIsMobileOpen(false)}>
-            <motion.div
-              whileHover={{ x: 4 }}
-              whileTap={{ scale: 0.98 }}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
-                isActive("/admin")
-                  ? "bg-primary/10 text-primary border border-primary/20"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-              )}
-            >
-              <Shield size={20} />
-              <span className="font-medium">Admin Panel</span>
-              {isActive("/admin") && (
-                <ChevronRight size={16} className="ml-auto" />
-              )}
-            </motion.div>
-          </Link>
-        )}
-      </nav>
-
-      {/* Bottom Navigation */}
-      <div className="p-4 border-t border-sidebar-border space-y-1">
-        {bottomItems.map((item) => (
-          <Link key={item.id} to={item.path} onClick={() => setIsMobileOpen(false)}>
-            <motion.div
-              whileHover={{ x: 4 }}
-              whileTap={{ scale: 0.98 }}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
-                isActive(item.path)
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-              )}
-            >
-              <item.icon size={20} />
-              <span className="font-medium">{item.label}</span>
-            </motion.div>
-          </Link>
-        ))}
-
-        <Button
-          variant="ghost"
-          onClick={handleSignOut}
-          className="w-full justify-start gap-3 px-4 py-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+        <motion.div
+          whileHover={{ x: 4 }}
+          whileTap={{ scale: 0.98 }}
+          className={cn(
+            "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+            isActive("/admin")
+              ? "bg-primary/10 text-primary border border-primary/20"
+              : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+          )}
         >
-          <LogOut size={20} />
-          <span className="font-medium">Sign Out</span>
-        </Button>
+          <Shield size={20} />
+          <span className="font-medium">Admin Panel</span>
+          {isActive("/admin") && (
+            <ChevronRight size={16} className="ml-auto" />
+          )}
+        </motion.div>
+      </Link>
+    )}
+  </nav>
+
+  {/* Bottom Navigation */}
+  <div className="p-4 border-t border-sidebar-border space-y-3">
+    {bottomItems.map((item) => (
+      <Link key={item.id} to={item.path} onClick={() => setIsMobileOpen(false)}>
+        <motion.div
+          whileHover={{ x: 4 }}
+          whileTap={{ scale: 0.98 }}
+          className={cn(
+            "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+            isActive(item.path)
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+          )}
+        >
+          <item.icon size={20} />
+          <span className="font-medium">{item.label}</span>
+        </motion.div>
+      </Link>
+    ))}
+
+    <div className="flex items-center justify-between px-4 py-2 rounded-lg border border-border/60 bg-background/60">
+      <div>
+        <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Theme</p>
+        <p className="text-xs text-foreground">Light / Dark</p>
       </div>
+      <ThemeToggle />
+    </div>
+
+    <Button
+      variant="ghost"
+      onClick={handleSignOut}
+      className="w-full justify-start gap-3 px-4 py-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+    >
+      <LogOut size={20} />
+      <span className="font-medium">Sign Out</span>
+    </Button>
+  </div>
     </>
   );
 

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { LearnerLayout } from "@/components/layout/LearnerLayout";
 import { useRealtimeLeaderboard } from "@/hooks/useRealtimeLeaderboard";
 import { useStreakLeaderboard } from "@/hooks/useStreak";
 import { useCourseLeaderboard, useClassLeaderboard, useUserEnrolledClass } from "@/hooks/useCourseLeaderboard";
@@ -105,11 +105,7 @@ const Leaderboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      
-      <main className="ml-0 md:ml-64 p-4 md:p-8">
-        <div className="max-w-3xl mx-auto">
+    <LearnerLayout contentClassName="max-w-3xl">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -323,8 +319,7 @@ const Leaderboard = () => {
             </TabsContent>
           </Tabs>
         </div>
-      </main>
-    </div>
+    </LearnerLayout>
   );
 };
 

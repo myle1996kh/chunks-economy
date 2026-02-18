@@ -29,7 +29,7 @@ import { CoinBadge } from "@/components/ui/CoinBadge";
 import { StreakDisplay } from "@/components/ui/StreakDisplay";
 import { PracticeHeatmap } from "@/components/ui/PracticeHeatmap";
 import { BadgeCard } from "@/components/ui/BadgeCard";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { LearnerLayout } from "@/components/layout/LearnerLayout";
 import { useProfile, useWallet } from "@/hooks/useUserData";
 import { useUserStats, usePracticeHistory } from "@/hooks/usePractice";
 import { useCoinTransactions } from "@/hooks/useCoinWallet";
@@ -182,11 +182,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      
-      <main className="lg:ml-64 p-4 lg:p-8 pt-20 lg:pt-8">
-        <div className="max-w-4xl mx-auto">
+    <LearnerLayout contentClassName="max-w-4xl">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -693,8 +689,7 @@ const Profile = () => {
             </TabsContent>
           </Tabs>
         </div>
-      </main>
-    </div>
+    </LearnerLayout>
   );
 };
 
